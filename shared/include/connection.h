@@ -7,9 +7,6 @@
 #include <asio.hpp>
 
 #include "coroutine.h"
-#include "message.h"
-#include "snowflake.h"
-#include "user.h"
 
 namespace pine
 {
