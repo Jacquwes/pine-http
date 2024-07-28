@@ -3,10 +3,21 @@ project(shared)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-file(GLOB_RECURSE HEADER_FILES "include/*.h")
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
+add_library(shared STATIC)
 
-add_library(shared STATIC ${HEADER_FILES} ${SOURCE_FILES})
+target_sources(shared
+  PRIVATE
+    "include/connection.h"
+    "include/coroutine.h"
+    "include/error.h"
+    "include/http.h"
+    "include/http_request.h"
+    "include/snowflake.h"
+
+    "src/connection.cpp"
+    "src/snowflake.cpp"
+    "src/http_request.cpp" 
+ )
 
 target_include_directories(shared PUBLIC include)
 
