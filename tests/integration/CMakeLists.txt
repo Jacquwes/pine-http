@@ -1,11 +1,8 @@
 include_directories()
 include(GoogleTest)
 
-file (GLOB_RECURSE SOURCES *.cpp)
-
 add_executable(
 	integration_tests
-	${SOURCES}
 )
 
 target_link_libraries(integration_tests PRIVATE asio)
