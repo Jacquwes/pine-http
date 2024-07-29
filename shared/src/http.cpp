@@ -9,7 +9,9 @@
 
 namespace pine::http_utils
 {
-  static constexpr std::string find_body(std::string_view request, size_t& offset, std::error_code& ec)
+  std::string find_body(std::string_view request,
+                        size_t& offset,
+                        std::error_code& ec)
   {
     size_t start = request.find(crlf, offset);
     if (start == std::string::npos)
@@ -24,7 +26,9 @@ namespace pine::http_utils
     return std::string(request.substr(start));
   }
 
-  static std::pair<std::string, std::string> find_header(std::string_view request, size_t& offset, std::error_code& ec)
+  std::pair<std::string, std::string> find_header(std::string_view request,
+                                                  size_t& offset,
+                                                  std::error_code& ec)
   {
     size_t start = request.find(crlf, offset);
     if (start == std::string::npos)
@@ -63,7 +67,9 @@ namespace pine::http_utils
     return { name, value };
   }
 
-  static std::map<std::string, std::string> find_headers(const std::string& request, size_t& offset, std::error_code& ec)
+  std::map<std::string, std::string> find_headers(const std::string& request,
+                                                  size_t& offset,
+                                                  std::error_code& ec)
   {
     std::map<std::string, std::string> result;
 
@@ -83,7 +89,9 @@ namespace pine::http_utils
     return result;
   }
 
-  static http_method find_method(std::string_view request, size_t& offset, std::error_code& ec)
+  http_method find_method(std::string_view request,
+                          size_t& offset,
+                          std::error_code& ec)
   {
     using enum http_method;
 
@@ -104,7 +112,32 @@ namespace pine::http_utils
     return {};
   }
 
-  static constexpr std::string find_uri(std::string_view request, size_t& offset, std::error_code& ec)
+  http_status find_status(std::string_view request,
+                          size_t& offset,
+                          std::error_code& ec)
+  {
+    size_t start = request.find(' ', offset);
+    if (start == std::string::npos)
+    {
+      ec = make_error_code(error::parse_error_status);
+      return {};
+    }
+
+    size_t end = request.find(' ', start + 1);
+    if (end == std::string::npos)
+    {
+      ec = make_error_code(error::parse_error_status);
+      return {};
+    }
+
+    offset = end;
+    auto status = std::string_view(request.substr(start, end - start));
+    return static_cast<http_status>(std::stoi(std::string(status)));
+  }
+
+  std::string find_uri(std::string_view request,
+                       size_t& offset,
+                       std::error_code& ec)
   {
     size_t start = request.find('/', offset);
     if (start == std::string::npos)
@@ -125,7 +158,9 @@ namespace pine::http_utils
     return uri;
   }
 
-  static constexpr http_version find_version(std::string_view request, size_t& offset, std::error_code& ec)
+  http_version find_version(std::string_view request,
+                            size_t& offset,
+                            std::error_code& ec)
   {
     size_t start = request.find(' ', offset);
     if (start == std::string::npos)
@@ -141,7 +176,8 @@ namespace pine::http_utils
       return {};
     }
 
-    std::string_view http_1_1_string = http_version_strings.at(http_version::http_1_1);
+    std::string_view http_1_1_string =
+      http_version_strings.at(http_version::http_1_1);
     if (size_t version_index = request.find(http_1_1_string, start);
         version_index != std::string::npos &&
         version_index < eol)

@@ -51,11 +51,12 @@ namespace pine
 
   namespace http_utils
   {
-    static constexpr std::string find_body(const std::string& request, size_t& offset, std::error_code& ec);
-    static std::map<std::string, std::string> find_headers(const std::string& request, size_t& offset, std::error_code& ec);
-    static std::pair<std::string, std::string> find_header(const std::string& request, size_t& offset, std::error_code& ec);
-    static pine::http_method find_method(std::string_view request, size_t& offset, std::error_code& ec);
-    static constexpr std::string find_uri(std::string_view request, size_t& offset, std::error_code& ec);
-    static constexpr pine::http_version find_version(std::string_view request, size_t& offset, std::error_code& ec);
+    std::string find_body(std::string_view request, size_t& offset, std::error_code& ec);
+    std::map<std::string, std::string> find_headers(const std::string& request, size_t& offset, std::error_code& ec);
+    std::pair<std::string, std::string> find_header(std::string_view request, size_t& offset, std::error_code& ec);
+    http_method find_method(std::string_view request, size_t& offset, std::error_code& ec);
+    http_status find_status(std::string_view response, size_t& offset, std::error_code& ec);
+    std::string find_uri(std::string_view request, size_t& offset, std::error_code& ec);
+    http_version find_version(std::string_view request, size_t& offset, std::error_code& ec);
   }
 }
