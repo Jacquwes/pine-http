@@ -22,10 +22,22 @@ namespace pine
 
     inline std::string message(int code) const override
     {
+      using enum error;
+
       switch (static_cast<error>(code))
       {
-      case error::success:
+      case success:
         return "Success";
+      case parse_error_method:
+        return "Parse error: method";
+      case parse_error_uri:
+        return "Parse error: URI";
+      case parse_error_version:
+        return "Parse error: version";
+      case parse_error_headers:
+        return "Parse error: headers";
+      case parse_error_body:
+        return "Parse error: body";
       default:
         return "Unknown";
       }
