@@ -43,14 +43,5 @@ namespace pine
     pine::http_version version = pine::http_version::http_1_1;
     std::map<std::string, std::string> headers;
     std::string body;
-
-    static constexpr const char* crlf = "\r\n";
-
-    static constexpr std::string find_body(const std::string& request, size_t& offset, std::error_code& ec);
-    static std::map<std::string, std::string> find_headers(const std::string& request, size_t& offset, std::error_code& ec);
-    static std::pair<std::string, std::string> find_header(const std::string& request, size_t& offset, std::error_code& ec);
-    static pine::http_method find_method(std::string_view request, size_t& offset, std::error_code& ec);
-    static constexpr std::string find_uri(std::string_view request, size_t& offset, std::error_code& ec);
-    static constexpr pine::http_version find_version(std::string_view request, size_t& offset, std::error_code& ec);
   };
 }

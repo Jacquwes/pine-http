@@ -16,6 +16,7 @@ target_sources(shared
 
     "src/connection.cpp"
     "src/snowflake.cpp"
+    "src/http.cpp"
     "src/http_request.cpp" 
  )
 
