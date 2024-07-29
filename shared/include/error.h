@@ -13,6 +13,7 @@ namespace pine
     parse_error_version,
     parse_error_headers,
     parse_error_body,
+    parse_error_status,
   };
 
   class error_category : public std::error_category
@@ -38,6 +39,8 @@ namespace pine
         return "Parse error: headers";
       case parse_error_body:
         return "Parse error: body";
+      case parse_error_status:
+        return "Parse error: status";
       default:
         return "Unknown";
       }
