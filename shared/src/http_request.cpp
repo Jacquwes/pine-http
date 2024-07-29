@@ -36,7 +36,6 @@ namespace pine
     if (ec) return result;
 
     result.body = http_utils::find_body(request, offset, ec);
-    if (ec) return result;
 
     return result;
   }
