@@ -12,13 +12,15 @@ target_sources(shared
     "include/error.h"
     "include/http.h"
     "include/http_request.h"
+    "include/http_response.h"
     "include/snowflake.h"
 
     "src/connection.cpp"
     "src/snowflake.cpp"
     "src/http.cpp"
     "src/http_request.cpp" 
- )
+    "src/http_response.cpp"
+)
 
 target_include_directories(shared PUBLIC include)
 
