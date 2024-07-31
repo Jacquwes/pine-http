@@ -11,16 +11,21 @@ namespace pine
 
     size_t offset = 0;
 
-    result.version = http_utils::find_version(response, offset, ec);
+    result.version = http_utils::try_get_version(response, offset, ec);
+    if (ec) return result;
+    offset += strlen(" ");
+
+    result.status = http_utils::try_get_status(response, offset, ec);
+    if (ec) return result;
+    offset += strlen(crlf);
+
+    result.headers = http_utils::try_get_headers(response, offset, ec);
     if (ec) return result;
 
-    result.status = http_utils::find_status(response, offset, ec);
-    if (ec) return result;
-
-    result.headers = http_utils::find_headers(response, offset, ec);
-    if (ec) return result;
-
-    result.body = http_utils::find_body(response, offset, ec);
+    if (offset < response.size())
+    {
+      result.body = http_utils::try_get_body(response, offset, ec);
+    }
 
     return result;
   }

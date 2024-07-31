@@ -23,19 +23,25 @@ namespace pine
     http_request result;
 
     size_t offset = 0;
-    result.method = http_utils::find_method(request, offset, ec);
+    result.method = http_utils::try_get_method(request, offset, ec);
+    if (ec) return result;
+    offset += strlen(" ");
+
+    result.uri = http_utils::try_get_uri(request, offset, ec);
+    if (ec) return result;
+    offset += strlen(" ");
+
+    result.version = http_utils::try_get_version(request, offset, ec);
+    if (ec) return result;
+    offset += strlen(crlf);
+
+    result.headers = http_utils::try_get_headers(request, offset, ec);
     if (ec) return result;
 
-    result.uri = http_utils::find_uri(request, offset, ec);
-    if (ec) return result;
-
-    result.version = http_utils::find_version(request, offset, ec);
-    if (ec) return result;
-
-    result.headers = http_utils::find_headers(request, offset, ec);
-    if (ec) return result;
-
-    result.body = http_utils::find_body(request, offset, ec);
+    if (offset < request.size())
+    {
+      result.body = http_utils::try_get_body(request, offset, ec);
+    }
 
     return result;
   }
