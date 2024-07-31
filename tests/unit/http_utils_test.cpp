@@ -17,9 +17,9 @@ TEST(HttpUtilsTest, FindBody)
     "{\"name\":\"John\",\"age\":30}";
 
   // index of the first character of the body
-  size_t offset = 76;
+  size_t offset = request.find("{\"name");
   std::error_code ec;
-  std::string body = find_body(request, offset, ec);
+  std::string body = try_get_body(request, offset, ec);
 
   EXPECT_EQ(ec, std::error_code{});
   EXPECT_EQ(body, "{\"name\":\"John\",\"age\":30}");
@@ -33,9 +33,9 @@ TEST(HttpUtilsTest, FindHeader)
     "\r\n"
     "{\"name\":\"John\",\"age\":30}";
 
-  size_t offset = 0;
+  size_t offset = request.find("Host:");
   std::error_code ec;
-  auto [name, value] = find_header(request, offset, ec);
+  auto [name, value] = try_get_header(request, offset, ec);
 
   EXPECT_EQ(ec, std::error_code{});
   EXPECT_EQ(name, "Host");
@@ -50,9 +50,9 @@ TEST(HttpUtilsTest, FindHeaders)
     "\r\n"
     "{\"name\":\"John\",\"age\":30}";
 
-  size_t offset = 0;
+  size_t offset = request.find("Host");
   std::error_code ec;
-  std::map<std::string, std::string> headers = find_headers(request, offset, ec);
+  std::map<std::string, std::string> headers = try_get_headers(request, offset, ec);
 
   EXPECT_EQ(ec, std::error_code{});
   EXPECT_EQ(headers.size(), 2);
@@ -70,7 +70,7 @@ TEST(HttpUtilsTest, FindMethod)
 
   size_t offset = 0;
   std::error_code ec;
-  http_method method = find_method(request, offset, ec);
+  http_method method = try_get_method(request, offset, ec);
 
   EXPECT_EQ(ec, std::error_code{});
   EXPECT_EQ(method, http_method::get);
@@ -83,9 +83,9 @@ TEST(HttpUtilsTest, FindStatus)
     "\r\n"
     "{\"name\":\"John\",\"age\":30}";
 
-  size_t offset = 0;
+  size_t offset = request.find("200");
   std::error_code ec;
-  http_status status = find_status(request, offset, ec);
+  http_status status = try_get_status(request, offset, ec);
 
   EXPECT_EQ(ec, std::error_code{});
   EXPECT_EQ(status, http_status::ok);
@@ -99,9 +99,9 @@ TEST(HttpUtilsTest, FindUri)
     "\r\n"
     "{\"name\":\"John\",\"age\":30}";
 
-  size_t offset = 0;
+  size_t offset = request.find("/api/users");
   std::error_code ec;
-  std::string uri = find_uri(request, offset, ec);
+  std::string uri = try_get_uri(request, offset, ec);
 
   EXPECT_EQ(ec, std::error_code{});
   EXPECT_EQ(uri, "/api/users");
@@ -115,9 +115,9 @@ TEST(HttpUtilsTest, FindVersion)
     "\r\n"
     "{\"name\":\"John\",\"age\":30}";
 
-  size_t offset = 0;
+  size_t offset = request.find("HTTP/1.1");
   std::error_code ec;
-  http_version version = find_version(request, offset, ec);
+  http_version version = try_get_version(request, offset, ec);
 
   EXPECT_EQ(ec, std::error_code{});
   EXPECT_EQ(version, http_version::http_1_1);
