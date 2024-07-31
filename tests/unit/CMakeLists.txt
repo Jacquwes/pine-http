@@ -7,6 +7,7 @@ target_sources(unit_tests
   PRIVATE
     "unit_tests.cpp"
     "http_request_test.cpp"
+    "http_response_test.cpp"
     "http_utils_test.cpp"
 )
 
