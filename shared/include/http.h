@@ -7,13 +7,15 @@
 
 namespace pine
 {
+  /// @brief Represents an HTTP method.
   enum class http_method
   {
-    get,
-    head,
-    post,
+    get, /// The GET method.
+    head, /// The HEAD method.
+    post, /// The POST method.
   };
 
+  /// @brief Map of HTTP methods to their string representations.
   inline const std::map<http_method, std::string> http_method_strings
   {
     { http_method::get, "GET" },
@@ -21,14 +23,16 @@ namespace pine
     { http_method::post, "POST" },
   };
 
+  /// @brief Represents an HTTP status code.
   enum class http_status
   {
-    ok = 200,
-    bad_request = 400,
-    not_found = 404,
-    internal_server_error = 500,
+    ok = 200, /// The OK status code.
+    bad_request = 400, /// The Bad Request status code.
+    not_found = 404, /// The Not Found status code.
+    internal_server_error = 500, /// The Internal Server Error status code.
   };
 
+  /// @brief Map of HTTP status codes to their string representations.
   inline const std::map<http_status, std::string> http_status_strings
   {
     { http_status::ok, "OK" },
@@ -37,26 +41,70 @@ namespace pine
     { http_status::internal_server_error, "Internal Server Error" },
   };
 
+  /// @brief Represents an HTTP version.
   enum class http_version
   {
-    http_1_1,
+    http_1_1, /// HTTP version 1.1.
   };
 
+  /// @brief Map of HTTP versions to their string representations.
   inline const std::map<http_version, std::string> http_version_strings
   {
     { http_version::http_1_1, "HTTP/1.1" },
   };
 
+  /// @brief Carriage return and line feed sequence.
   static constexpr const char* crlf = "\r\n";
 
   namespace http_utils
   {
-    std::string find_body(std::string_view request, size_t& offset, std::error_code& ec);
-    std::map<std::string, std::string> find_headers(const std::string& request, size_t& offset, std::error_code& ec);
-    std::pair<std::string, std::string> find_header(std::string_view request, size_t& offset, std::error_code& ec);
-    http_method find_method(std::string_view request, size_t& offset, std::error_code& ec);
-    http_status find_status(std::string_view response, size_t& offset, std::error_code& ec);
-    std::string find_uri(std::string_view request, size_t& offset, std::error_code& ec);
-    http_version find_version(std::string_view request, size_t& offset, std::error_code& ec);
+    /// @brief Tries to extract the body from an HTTP request.
+    /// @param request The HTTP request.
+    /// @param offset The offset in the request where the body starts.
+    /// @param ec The error code to be set if an error occurs.
+    /// @return The extracted body as a string.
+    std::string try_get_body(std::string_view request, size_t& offset, std::error_code& ec);
+
+    /// @brief Tries to extract the headers from an HTTP request.
+    /// @param request The HTTP request.
+    /// @param offset The offset in the request where the headers start.
+    /// @param ec The error code to be set if an error occurs.
+    /// @return The extracted headers as a map of key-value pairs.
+    std::map<std::string, std::string> try_get_headers(const std::string& request, size_t& offset, std::error_code& ec);
+
+    /// @brief Tries to extract a single header from an HTTP request.
+    /// @param request The HTTP request.
+    /// @param offset The offset in the request where the header starts.
+    /// @param ec The error code to be set if an error occurs.
+    /// @return The extracted header as a pair of key and value.
+    std::pair<std::string, std::string> try_get_header(std::string_view request, size_t& offset, std::error_code& ec);
+
+    /// @brief Tries to extract the HTTP method from an HTTP request.
+    /// @param request The HTTP request.
+    /// @param offset The offset in the request where the method starts.
+    /// @param ec The error code to be set if an error occurs.
+    /// @return The extracted HTTP method.
+    http_method try_get_method(std::string_view request, size_t& offset, std::error_code& ec);
+
+    /// @brief Tries to extract the HTTP status from an HTTP response.
+    /// @param response The HTTP response.
+    /// @param offset The offset in the response where the status starts.
+    /// @param ec The error code to be set if an error occurs.
+    /// @return The extracted HTTP status.
+    http_status try_get_status(std::string_view response, size_t& offset, std::error_code& ec);
+
+    /// @brief Tries to extract the URI from an HTTP request.
+    /// @param request The HTTP request.
+    /// @param offset The offset in the request where the URI starts.
+    /// @param ec The error code to be set if an error occurs.
+    /// @return The extracted URI as a string.
+    std::string try_get_uri(std::string_view request, size_t& offset, std::error_code& ec);
+
+    /// @brief Tries to extract the HTTP version from an HTTP request.
+    /// @param request The HTTP request.
+    /// @param offset The offset in the request where the version starts.
+    /// @param ec The error code to be set if an error occurs.
+    /// @return The extracted HTTP version.
+    http_version try_get_version(std::string_view request, size_t& offset, std::error_code& ec);
   }
 }

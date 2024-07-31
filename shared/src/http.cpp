@@ -1,4 +1,5 @@
 #include <cstring>
+#include <format>
 #include <map>
 #include <string>
 #include <string_view>
@@ -9,143 +10,121 @@
 
 namespace pine::http_utils
 {
-  std::string find_body(std::string_view request,
-                        size_t& offset,
-                        std::error_code& ec)
+  std::string try_get_body(std::string_view request,
+                           size_t& offset,
+                           std::error_code& ec)
   {
-    size_t start = request.find(crlf, offset);
-    if (start == std::string::npos)
+    if (offset >= request.size())
     {
-      ec = make_error_code(pine::error::parse_error_body);
+      ec = make_error_code(error::parse_error_body);
       return {};
     }
 
-    start += 2;
-    offset += request.size() - start;
+    auto body = std::string(request.substr(offset));
+    offset = request.size();
 
-    return std::string(request.substr(start));
+    return body;
   }
 
-  std::pair<std::string, std::string> find_header(std::string_view request,
-                                                  size_t& offset,
-                                                  std::error_code& ec)
+  std::pair<std::string, std::string> try_get_header(std::string_view request,
+                                                     size_t& offset,
+                                                     std::error_code& ec)
   {
-    size_t start = request.find(crlf, offset);
-    if (start == std::string::npos)
+    size_t start = offset;
+    size_t end = request.find(crlf, start);
+    size_t colon = request.find(':', start);
+    if (colon == std::string::npos || end == std::string::npos || colon > end)
     {
       ec = make_error_code(error::parse_error_headers);
       return {};
     }
 
-    start += strlen(crlf);
+    size_t name_start = start;
+    size_t name_end = colon;
+    size_t value_start = colon + 2;
+    size_t value_end = end;
 
-    if (bool line_is_empty = start == request.find(crlf, start);
-        line_is_empty)
-    {
-      offset += strlen(crlf);
-      return { {}, {} };
-    }
+    offset = end + strlen(crlf);
 
-    size_t colon = request.find(':', offset);
-    if (colon == std::string::npos || colon <= start)
-    {
-      ec = make_error_code(error::parse_error_headers);
-      return {};
-    }
-
-    size_t end = request.find(crlf, colon);
-    if (end == std::string::npos)
-    {
-      ec = make_error_code(error::parse_error_headers);
-      return {};
-    }
-
-    auto name = std::string(request.substr(start, colon - start));
-    auto value = std::string(request.substr(colon + 2, end - colon - 2));
-    offset = end;
+    auto name = std::string(request.substr(name_start, name_end - name_start));
+    auto value = std::string(request.substr(value_start, value_end - value_start));
 
     return { name, value };
   }
 
-  std::map<std::string, std::string> find_headers(const std::string& request,
-                                                  size_t& offset,
-                                                  std::error_code& ec)
+  std::map<std::string, std::string> try_get_headers(const std::string& request,
+                                                     size_t& offset,
+                                                     std::error_code& ec)
   {
     std::map<std::string, std::string> result;
 
     while (true)
     {
-      auto [name, value] = find_header(request, offset, ec);
-      if (ec) return {};
-
-      if (name.empty())
+      if (bool line_exists = offset < request.size(); !line_exists)
+        return result;
+      if (bool line_is_empty = request.substr(offset).starts_with(crlf))
       {
-        break;
+        offset += strlen(crlf);
+        return result;
       }
+
+      auto [name, value] = try_get_header(request, offset, ec);
+      if (ec) break;
 
       result.insert_or_assign(name, value);
     }
 
-    return result;
+    return {};
   }
 
-  http_method find_method(std::string_view request,
-                          size_t& offset,
-                          std::error_code& ec)
+  http_method try_get_method(std::string_view request,
+                             size_t& offset,
+                             std::error_code& ec)
   {
-    using enum http_method;
-
-    if (std::string_view get_string = http_method_strings.at(get);
-        request.starts_with(get_string))
+    for (const auto& [method, method_string] : http_method_strings)
     {
-      offset += get_string.size();
-      return get;
-    }
-    else if (std::string_view head_string = http_method_strings.at(head);
-             request.starts_with(head_string))
-    {
-      offset += head_string.size();
-      return head;
+      if (request.substr(offset).starts_with(method_string))
+      {
+        offset += method_string.size();
+        return method;
+      }
     }
 
     ec = make_error_code(error::parse_error_method);
     return {};
   }
 
-  http_status find_status(std::string_view request,
+  http_status try_get_status(std::string_view request,
+                             size_t& offset,
+                             std::error_code& ec)
+  {
+    for (const auto& [status, status_string] : http_status_strings)
+    {
+      auto status_code_string = std::to_string(static_cast<int>(status));
+      std::string expected_status = std::format("{} {}", status_code_string, status_string);
+
+      if (request.substr(offset).starts_with(expected_status))
+      {
+        offset += expected_status.size();
+        return status;
+      }
+    }
+
+    ec = make_error_code(error::parse_error_status);
+    return {};
+  }
+
+  std::string try_get_uri(std::string_view request,
                           size_t& offset,
                           std::error_code& ec)
   {
-    size_t start = request.find(' ', offset);
-    if (start == std::string::npos)
-    {
-      ec = make_error_code(error::parse_error_status);
-      return {};
-    }
-
-    size_t end = request.find(' ', start + 1);
-    if (end == std::string::npos)
-    {
-      ec = make_error_code(error::parse_error_status);
-      return {};
-    }
-
-    offset = end;
-    auto status = std::string_view(request.substr(start, end - start));
-    return static_cast<http_status>(std::stoi(std::string(status)));
-  }
-
-  std::string find_uri(std::string_view request,
-                       size_t& offset,
-                       std::error_code& ec)
-  {
-    size_t start = request.find('/', offset);
-    if (start == std::string::npos)
+    if (request.at(offset) != '/')
     {
       ec = make_error_code(error::parse_error_uri);
       return {};
     }
 
+    size_t start = offset;
     size_t end = request.find(' ', start);
     if (end == std::string::npos)
     {
@@ -154,36 +133,20 @@ namespace pine::http_utils
     }
 
     offset = end;
-    auto uri = std::string(request.substr(start, end - start));
-    return uri;
+    return std::string(request.substr(start, end - start));
   }
 
-  http_version find_version(std::string_view request,
-                            size_t& offset,
-                            std::error_code& ec)
+  http_version try_get_version(std::string_view request,
+                               size_t& offset,
+                               std::error_code& ec)
   {
-    size_t start = request.find(' ', offset);
-    if (start == std::string::npos)
+    for (const auto& [version, version_string] : http_version_strings)
     {
-      ec = make_error_code(error::parse_error_version);
-      return {};
-    }
-
-    size_t eol = request.find(crlf, start);
-    if (eol == std::string::npos)
-    {
-      ec = make_error_code(error::parse_error_version);
-      return {};
-    }
-
-    std::string_view http_1_1_string =
-      http_version_strings.at(http_version::http_1_1);
-    if (size_t version_index = request.find(http_1_1_string, start);
-        version_index != std::string::npos &&
-        version_index < eol)
-    {
-      offset += http_1_1_string.size();
-      return http_version::http_1_1;
+      if (request.substr(offset).starts_with(version_string))
+      {
+        offset += version_string.size();
+        return version;
+      }
     }
 
     ec = make_error_code(error::parse_error_version);
