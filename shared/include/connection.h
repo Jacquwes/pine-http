@@ -20,14 +20,6 @@ namespace pine
 		/// @brief Destroy the connection.
 		virtual ~connection() = default;
 
-		/// @brief Receive a managed message from the connection.
-		async_operation<std::shared_ptr<socket_messages::message>> receive_message();
-
-		/// @brief Send a managed message to the connection.
-		/// @param message Message to send. The message must inherit from the message class.
-		/// @return An asynchronous task completed when the message has been sent.
-		async_task send_message(std::shared_ptr<socket_messages::message> const& message);
-
 		/// @brief Receive a raw message to the connection.
 		/// @param buffer_size Number of bytes to receive.
 		/// @return An asynchronous operation that returns the received bytes.
@@ -46,8 +38,5 @@ namespace pine
 
 		/// @brief The socket of the connection.
 		asio::ip::tcp::socket socket;
-
-		/// @brief The user data of the connection.
-		user user_data{};
 	};
 }
