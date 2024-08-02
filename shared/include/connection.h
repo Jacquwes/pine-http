@@ -15,10 +15,10 @@ namespace pine
 	{
 	public:
 		/// @brief Construct a connection with the given socket.
-		connection(asio::ip::tcp::socket socket);
+		explicit connection(asio::ip::tcp::socket socket);
 
 		/// @brief Destroy the connection.
-		virtual ~connection();
+		virtual ~connection() = default;
 
 		/// @brief Receive a managed message from the connection.
 		async_operation<std::shared_ptr<socket_messages::message>> receive_message();
