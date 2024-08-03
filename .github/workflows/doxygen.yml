@@ -1,14 +1,14 @@
 on:
   workflow_dispatch:
   push:
-    branches: [ "master", "api-v2", "asio" ]
+    # branches: [ "master", "api-v2", "asio" ]
     paths:
     - '**.h'
     - '**.md'
     - '**doxygen.yml'
     - '**doxyfile'
   pull_request:
-    branches: [ "master", "api-v2", "asio" ]
+    # branches: [ "master", "api-v2", "asio" ]
     paths:
     - '**.h'
     - '**.md'
