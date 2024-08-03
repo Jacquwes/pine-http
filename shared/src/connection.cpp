@@ -18,7 +18,8 @@ namespace pine
     std::cout << "[Connection] New connection: " << id << std::endl;
   }
 
-  async_operation<std::vector<uint8_t>> connection::receive_raw_message(uint64_t const& bufferSize)
+  async_operation<std::vector<uint8_t>> connection::receive_raw_message(
+    uint64_t const& bufferSize, std::error_code& ec)
   {
     std::vector<uint8_t> buffer(bufferSize, 0);
 
@@ -41,7 +42,8 @@ namespace pine
   }
 
 
-  async_task connection::send_raw_message(std::vector<uint8_t> const& buffer)
+  async_task connection::send_raw_message(std::vector<uint8_t> const& buffer,
+                                          std::error_code& ec)
   {
     if (buffer.empty())
       co_return;
