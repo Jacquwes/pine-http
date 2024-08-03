@@ -3,12 +3,13 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "coroutine.h"
+#include "snowflake.h"
 
 #ifdef _WIN32
 #include <WinSock2.h>
 #endif // _WIN32
 
-#include "coroutine.h"
 
 namespace pine
 {
@@ -24,12 +25,12 @@ namespace pine
 		/// @brief Receive a raw message to the connection.
 		/// @param buffer_size Number of bytes to receive.
 		/// @return An asynchronous operation that returns the received bytes.
-		async_operation<std::vector<uint8_t>> receive_raw_message(uint64_t const& buffer_size);
+    async_operation<std::vector<uint8_t>> receive_raw_message(const uint64_t& buffer_size);
 
 		/// @brief Send a raw message to the connection.
 		/// @param buffer Buffer to send.
 		/// @return An asynchronous task completed when the message has been sent.
-		async_task send_raw_message(std::vector<uint8_t> const& buffer);
+    async_task send_raw_message(const std::vector<uint8_t>& buffer);
 
 		/// @brief Close the connection.
 		void close();
