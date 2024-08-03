@@ -16,8 +16,7 @@ namespace pine
 	class connection
 	{
 	public:
-		/// @brief Construct a connection with the given socket.
-		explicit connection(asio::ip::tcp::socket socket);
+    explicit connection(SOCKET socket, snowflake id = snowflake());
 
 		/// @brief Destroy the connection.
 		virtual ~connection() = default;
@@ -41,7 +40,7 @@ namespace pine
 
   private:
 		/// @brief The id of the connection.
-		snowflake id{};
+    snowflake id;
 
 		/// @brief The socket of the connection.
   #ifdef _WIN32
