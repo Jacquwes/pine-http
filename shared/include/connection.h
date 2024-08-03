@@ -33,6 +33,10 @@ namespace pine
 		/// @brief Close the connection.
 		void close();
 
+    /// @brief Get the id of the connection.
+    /// @return The id of the connection.
+    constexpr const snowflake& get_id() const noexcept { return id; }
+
   private:
 		/// @brief The id of the connection.
 		snowflake id{};
