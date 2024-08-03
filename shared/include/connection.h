@@ -4,7 +4,9 @@
 #include <memory>
 #include <vector>
 
-#include <asio.hpp>
+#ifdef _WIN32
+#include <WinSock2.h>
+#endif // _WIN32
 
 #include "coroutine.h"
 
@@ -42,6 +44,8 @@ namespace pine
 		snowflake id{};
 
 		/// @brief The socket of the connection.
-		asio::ip::tcp::socket socket;
+  #ifdef _WIN32
+    SOCKET socket;
+  #endif // _WIN32
 	};
 }
