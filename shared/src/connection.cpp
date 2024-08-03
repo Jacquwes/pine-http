@@ -1,16 +1,14 @@
-#include <array>
-#include <cstdint>
-#include <exception>
-#include <iostream>
-#include <system_error>
-#include <vector>
-#include "connection.h"
-#include "coroutine.h"
-#include "snowflake.h"
-
 #ifdef _WIN32
 #include <WinSock2.h>
 #endif // _WIN32
+#include <array>
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include "connection.h"
+#include "coroutine.h"
+#include "snowflake.h"
 
 namespace pine
 {
@@ -53,22 +51,22 @@ namespace pine
   }
 
 
-  async_task connection::send_raw_message(std::string_view buffer,
+  async_task connection::send_raw_message(std::string_view raw_message,
                                           std::error_code& ec)
   {
-    if (buffer.empty())
+    if (raw_message.empty())
       co_return;
 
-    asio::error_code ec;
-    socket.send(asio::buffer(buffer), {}, ec);
+    size_t bytes_sent = send(this->socket,
+                             raw_message.data(),
+                             static_cast<int>(raw_message.size()),
+                             0);
 
-    if (ec && ec != asio::error::connection_reset && ec != asio::error::connection_aborted)
+    if (bytes_sent == SOCKET_ERROR)
     {
-      std::cout << "[Connection] Failed to send message: " << std::dec << ec.value() << " -> " << ec.message() << std::endl;
+      ec = std::make_error_code(static_cast<std::errc>(WSAGetLastError()));
       co_return;
     }
-
-    co_return;
   }
 
   void connection::close()
