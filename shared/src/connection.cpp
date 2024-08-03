@@ -71,6 +71,9 @@ namespace pine
 
   void connection::close()
   {
-    socket.close();
+    shutdown(this->socket, SD_BOTH);
+    closesocket(this->socket);
+
+    this->socket = INVALID_SOCKET;
   }
 }
