@@ -23,18 +23,15 @@ namespace pine
     virtual ~connection() = default;
 
     /// @brief Receive a raw message to the connection.
-    /// @param buffer_size Number of bytes to receive.
     /// @param ec Error code.
     /// @return An asynchronous operation that returns the received bytes.
-    async_operation<std::vector<uint8_t>> receive_raw_message(
-      const uint64_t& buffer_size,
-      std::error_code& ec);
+    async_operation<std::string> receive_raw_message(std::error_code& ec);
 
     /// @brief Send a raw message to the connection.
-    /// @param buffer Buffer to send.
+    /// @param raw_message Message to send.
     /// @param ec Error code.
     /// @return An asynchronous task completed when the message has been sent.
-    async_task send_raw_message(const std::vector<uint8_t>& buffer,
+    async_task send_raw_message(std::string_view raw_message,
                                 std::error_code& ec);
 
     /// @brief Close the connection.
