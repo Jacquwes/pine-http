@@ -1,6 +1,8 @@
+#include <array>
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <system_error>
 #include <vector>
 #include "connection.h"
 #include "coroutine.h"
@@ -21,24 +23,33 @@ namespace pine
   async_operation<std::string> connection::receive_raw_message(
     std::error_code& ec)
   {
-    std::vector<uint8_t> buffer(bufferSize, 0);
+    static constexpr size_t chunk_size = 1024;
+    std::array<char, chunk_size> buffer{};
+    std::string message;
 
-    if (!bufferSize)
-      co_return buffer;
-
-    asio::error_code ec;
-    auto flags = asio::socket_base::message_peek;
-    size_t n = socket.receive(asio::buffer(buffer), flags, ec);
-
-    if (ec && ec != asio::error::connection_reset && ec != asio::error::connection_aborted)
+    while (true)
     {
-      std::cout << "[Connection] Failed to receive message: " << std::dec << ec.value() << " -> " << ec.message() << std::endl;
-      co_return buffer;
+      size_t bytes_received = recv(this->socket, buffer.data(), buffer.size(), 0);
+
+      if (bytes_received == 0)
+      {
+        ec = std::make_error_code(std::errc::connection_reset);
+        co_return "";
+      }
+
+      if (bytes_received == SOCKET_ERROR)
+      {
+        ec = std::make_error_code(static_cast<std::errc>(WSAGetLastError()));
+        co_return "";
+      }
+
+      message.append(buffer.data(), bytes_received);
+
+      if (bytes_received < buffer.size())
+        break;
     }
 
-    buffer.resize(n);
-
-    co_return buffer;
+    co_return message;
   }
 
 
