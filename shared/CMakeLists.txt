@@ -23,5 +23,3 @@ target_sources(shared
 )
 
 target_include_directories(shared PUBLIC include)
-
-target_link_libraries(shared PRIVATE asio)

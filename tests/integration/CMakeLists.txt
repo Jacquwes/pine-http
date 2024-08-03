@@ -5,7 +5,6 @@ add_executable(
 	integration_tests
 )
 
-target_link_libraries(integration_tests PRIVATE asio)
 target_link_libraries(integration_tests PRIVATE client)
 target_link_libraries(integration_tests PRIVATE server)
 target_link_libraries(integration_tests PRIVATE shared)
