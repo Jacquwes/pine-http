@@ -33,6 +33,7 @@ namespace pine
 		/// @brief Close the connection.
 		void close();
 
+  private:
 		/// @brief The id of the connection.
 		snowflake id{};
 
