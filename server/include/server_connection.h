@@ -24,7 +24,7 @@ namespace pine
 
         /// @brief Start listening for messages from the client.
         /// @return An asynchronous task completed when the connection has been closed.
-        async_task listen();
+    async_task start();
 
     private:
         /// @brief Whether the connection is connected.

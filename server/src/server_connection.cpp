@@ -26,10 +26,9 @@ namespace pine
 		connection{ std::move(client_socket) }
 	{
 
-		std::cout << "[Server] New client connection opened: " << std::dec << id << std::endl;
+  async_task server_connection::start()
 	}
 
-	async_task server_connection::listen()
 	{
 		co_await switch_thread(listen_thread);
 
