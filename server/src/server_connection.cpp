@@ -76,23 +76,3 @@ namespace pine
 		co_return true;
 	}
 	}
-
-	async_task server_connection::close()
-	{
-		// Return to the server thread if we're not already on it.
-		if (std::this_thread::get_id() == listen_thread.get_id())
-			co_await switch_thread(listen_thread);
-
-		this->socket.close();
-
-		std::scoped_lock lock(connection_mutex);
-
-		std::cout << "[Server]   Closing connection: " << std::dec << id << std::endl;
-
-		server_ref.disconnect_client(id);
-
-		std::cout << "[Server]   Connection closed: " << std::dec << id << std::endl;
-
-		co_return;
-	}
-}
