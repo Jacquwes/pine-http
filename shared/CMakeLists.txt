@@ -25,3 +25,7 @@ target_sources(shared
 )
 
 target_include_directories(shared PUBLIC include)
+
+if (WIN32)
+  target_link_libraries(shared PUBLIC ws2_32)
+endif()
