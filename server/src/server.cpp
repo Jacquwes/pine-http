@@ -1,160 +1,155 @@
+#include <coroutine.h>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <memory>
-#include <string_view>
 #include <string>
+#include <system_error>
 #include <type_traits>
-
-#include <asio/io_context.hpp>
-#include <asio/ip/tcp.hpp>
-#include <coroutine.h>
-
 #include "server.h"
 #include "server_connection.h"
+#include "wsa.h"
 
 namespace pine
 {
-	server::server(asio::io_context& context, uint16_t const& port)
-		: io_context{ context },
-		acceptor(context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
-	{}
+  server::server(const char* port)
+    : port(port)
+  {}
 
-	void server::listen()
-	{
-		is_listening = true;
+  void server::start(std::error_code& ec)
+  {
+    initialize_wsa(ec);
+    if (ec)
+      return;
 
-		if (!acceptor.is_open())
-			acceptor.open(asio::ip::tcp::v4(), error_code);
+    this->address_info = get_address_info(nullptr, port, ec);
+    if (ec)
+      return;
 
-		if (error_code)
-		{
-			std::cout << "[Server] Failed to open acceptor: " << error_code.message() << std::endl;
-			return;
-		}
+    this->server_socket = create_socket(this->address_info, ec);
+    if (ec)
+      return;
 
-		accept_clients();
+    bind_socket(server_socket, this->address_info, ec);
+    if (ec)
+      return;
 
-		std::cout << "[Server] Stopped listening" << std::endl;
-	}
+    listen_socket(server_socket, 1000, ec);
+    if (ec)
+      return;
 
-	void server::stop()
-	{
-		is_listening = false;
+    this->is_listening = true;
 
-		acceptor.cancel(error_code);
+    this->accept_clients(ec);
+  }
 
-		if (error_code)
-		{
-			std::cout << "[Server] Failed to cancel acceptor: " << error_code.message() << std::endl;
-		}
+  void server::stop()
+  {
+    is_listening = false;
 
-		acceptor.close(error_code);
+    close_socket(this->server_socket);
 
-		if (error_code)
-		{
-			std::cout << "[Server] Failed to close acceptor: " << error_code.message() << std::endl;
-		}
+    delete this->address_info;
 
-		auto clients_copy = clients;
-		for (auto& client : clients_copy)
-		{
-			disconnect_client(client.first);
-		}
+    for (const auto& [id, client] : this->clients)
+    {
+      client->close();
+    }
 
-		std::cout << "[Server] Socket stopped" << std::endl;
-	}
+    this->clients.clear();
+  }
 
-	async_task server::accept_clients()
-	{
-		std::cout << "[Server] Socket starts listening" << std::endl;
+  void server::accept_clients(std::error_code& ec)
+  {
+    for (const auto& callback : on_ready_callbacks)
+    {
+      callback(*this);
+    }
 
-		for (auto& callback : on_ready_callbacks)
-		{
-			co_await callback(*this);
-		}
+    while (this->is_listening)
+    {
+      auto client_socket = accept_socket(this->server_socket,
+                                         this->address_info,
+                                         ec);
+      if (ec)
+      {
+        for (const auto& callback : this->on_connection_failed_callbacks)
+        {
+          callback(*this, nullptr);
+        }
+        continue;
+      }
 
-		while (is_listening)
-		{
-			asio::ip::tcp::socket client_socket{ io_context };
+      auto client = std::make_shared<server_connection>(client_socket);
 
-			acceptor.accept(client_socket, error_code);
+      for (const auto& callback : this->on_connection_attemps_callbacks)
+      {
+        callback(*this, client);
+      }
 
-			if (error_code)
-			{
-				std::cout << "[Server] Failed to accept client: " << error_code.message() <<
-					std::endl;
-				continue;
-			}
+      std::unique_lock lock{ mutate_clients_mutex };
 
-			if (!is_listening)
-				break;
+      this->clients[client->get_id()] = client;
 
-			auto client = std::make_shared<server_connection>(client_socket, *this);
+      for (const auto& callback : this->on_connection_callbacks)
+      {
+        callback(*this, client);
+      }
 
-			client->listen();
+      client->start();
 
-			{
-				std::unique_lock lock{ mutate_clients_mutex };
-				clients.insert({ client->id, std::move(client) });
-			}
-		}
+      lock.unlock();
+    }
+  }
 
-		co_return;
-	}
+  async_task server::disconnect_client(uint64_t const& client_id)
+  {
+    std::unique_lock lock{ mutate_clients_mutex };
 
-	async_task server::disconnect_client(uint64_t const& client_id)
-	{
-		std::unique_lock lock{ mutate_clients_mutex };
+    auto client = clients.find(client_id);
 
-		auto client = clients.find(client_id);
+    if (client == clients.end())
+    {
+      co_return;
+    }
 
-		if (client == clients.end())
-		{
-			co_return;
-		}
+    client->second->close();
 
-		client->second->close();
+    clients.erase(client_id);
 
-		clients.erase(client_id);
+    co_return;
+  }
 
-		co_return;
-	}
+  server& server::on_connection_attempt(
+    std::function<
+    async_task(server&, std::shared_ptr<server_connection>const&)
+    > const& callback)
+  {
+    on_connection_attemps_callbacks.push_back(callback);
+    return *this;
+  }
 
-	async_task server::message_client(
-		std::shared_ptr<server_connection> const& client,
-		std::shared_ptr<socket_messages::message> const& message
-	) const
-	{
-		co_await client->send_message(message);
-	}
+  server& server::on_connection_failed(
+    std::function<
+    async_task(server&, std::shared_ptr<server_connection>const&)
+    > const& callback)
+  {
+    on_connection_failed_callbacks.push_back(callback);
+    return *this;
+  }
 
-	server& server::on_message(std::function<async_task(server&, std::shared_ptr<server_connection>const&, std::shared_ptr<socket_messages::message>const&)> const& callback)
-	{
-		on_message_callbacks.push_back(callback);
-		return *this;
-	}
+  server& server::on_connection(
+    std::function<
+    async_task(server&, std::shared_ptr<server_connection>const&)
+    > const& callback)
+  {
+    on_connection_callbacks.push_back(callback);
+    return *this;
+  }
 
-	server& server::on_connection_attempt(std::function<async_task(server&, std::shared_ptr<server_connection>const&)> const& callback)
-	{
-		on_connection_attemps_callbacks.push_back(callback);
-		return *this;
-	}
-
-	server& server::on_connection_failed(std::function<async_task(server&, std::shared_ptr<server_connection>const&)> const& callback)
-	{
-		on_connection_failed_callbacks.push_back(callback);
-		return *this;
-	}
-
-	server& server::on_connection(std::function<async_task(server&, std::shared_ptr<server_connection>const&)> const& callback)
-	{
-		on_connection_callbacks.push_back(callback);
-		return *this;
-	}
-
-	server& server::on_ready(std::function<async_task(server&)> const& callback)
-	{
-		on_ready_callbacks.push_back(callback);
-		return *this;
-	}
+  server& server::on_ready(std::function<async_task(server&)> const& callback)
+  {
+    on_ready_callbacks.push_back(callback);
+    return *this;
+  }
 }
