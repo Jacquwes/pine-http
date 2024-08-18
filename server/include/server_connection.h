@@ -6,6 +6,7 @@
 #include <thread>
 #include "connection.h"
 #include "coroutine.h"
+#include "http_request.h"
 #include "snowflake.h"
 
 namespace pine
@@ -18,6 +19,11 @@ namespace pine
   public:
     /// @brief Construct a server connection with the given socket and server.
     explicit server_connection(SOCKET socket);
+
+    /// @brief Receive an HTTP request.
+    /// @param ec An error code to be set if an error occurs.
+    /// @return An asynchronous task completed when the request has been received.
+    async_operation<http_request> receive_request(std::error_code& ec);
 
     /// @brief Start listening for messages from the client.
     /// @return An asynchronous task completed when the connection has been closed.
