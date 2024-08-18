@@ -2,13 +2,18 @@
 
 #include <iostream>
 
-#include <asio.hpp>
 #include <server.h>
 
 int main()
 {
-	asio::io_context context{};
-	pine::server server{ context };
+  pine::server server;
+  std::error_code ec;
+  server.start(ec);
+  if (ec)
+  {
+    std::cerr << "Error: " << ec.message() << std::endl;
+    return 1;
+  }
 
-	server.listen();
+  std::cout << "Server started." << std::endl;
 }

@@ -14,14 +14,18 @@ target_sources(shared
     "include/http_request.h"
     "include/http_response.h"
     "include/snowflake.h"
+    "include/wsa.h" 
 
     "src/connection.cpp"
     "src/snowflake.cpp"
     "src/http.cpp"
     "src/http_request.cpp" 
     "src/http_response.cpp"
+    "src/wsa.cpp"
 )
 
 target_include_directories(shared PUBLIC include)
 
-target_link_libraries(shared PRIVATE asio)
+if (WIN32)
+  target_link_libraries(shared PUBLIC ws2_32)
+endif()
