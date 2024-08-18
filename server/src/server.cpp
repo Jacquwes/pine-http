@@ -96,7 +96,11 @@ namespace pine
         callback(*this, client);
       }
 
-      client->start();
+      client->start(ec);
+      if (ec)
+      {
+        this->clients.erase(client->get_id());
+      }
 
       lock.unlock();
     }
