@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <string_view>
+#include <system_error>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -29,7 +30,7 @@ namespace pine
     void stop();
 
     /// @brief Disconnect a client.
-    /// @param client_id Id of the client to disconnect.	
+    /// @param client_id Id of the client to disconnect.
     /// @return An asynchronous task completed when the client has been
     /// disconnected.
     async_task disconnect_client(uint64_t const& client_id);
@@ -61,15 +62,15 @@ namespace pine
     std::jthread delete_clients_thread;
 
   public:
-    /// @brief Call this function to add a callback that will be executed when 
-    /// a new client attemps to connect to the server.
+    /// @brief Call this function to add a callback that will be executed when
+    /// a new client attempts to connect to the server.
     /// @return A reference to this server.
     server& on_connection_attempt(std::function < async_task(
       server&,
       std::shared_ptr<server_connection> const&)> const& callback
     );
 
-    /// @brief Call this function to add a callback that will be executed when 
+    /// @brief Call this function to add a callback that will be executed when
     /// a client fails
     /// to connect to the server.
     /// @return A reference to this server.
