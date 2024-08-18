@@ -15,7 +15,7 @@ namespace pine
   public:
     /// @brief Construct a client connection.
     /// @param socket The socket to use for the connection.
-    client_connection(SOCKET socket);
+    explicit client_connection(SOCKET socket);
 
     /// @brief Connect to a server.
     /// @param host Host name or IP address of the server.
