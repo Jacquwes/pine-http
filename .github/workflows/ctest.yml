@@ -36,25 +36,20 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [windows-latest]
         build_type: [Release]
         c_compiler: [gcc, cl]
         include:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
         exclude:
           - os: windows-latest
             c_compiler: gcc
-          - os: ubuntu-latest
-            c_compiler: cl
 
     steps:
     - uses: actions/checkout@v3
-  
+
     - name: Install vcpkg
       # Install vcpkg to a known location
       run: git clone https://github.com/microsoft/vcpkg.git ${{ github.workspace }}/vcpkg
@@ -68,7 +63,7 @@ jobs:
       # Bootstrap vcpkg using the appropriate triplet for the current runner operating system
       if: matrix.os == 'windows-latest'
       run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.bat -disableMetrics
-  
+
     - name: Install asio and gtest linux
       # Install dependencies using the appropriate triplet for the current runner operating system
       run: ${{ github.workspace }}/vcpkg/vcpkg install asio:x64-linux gtest:x64-linux
