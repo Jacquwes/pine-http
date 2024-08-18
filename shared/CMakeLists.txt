@@ -14,13 +14,15 @@ target_sources(shared
     "include/http_request.h"
     "include/http_response.h"
     "include/snowflake.h"
-    "include/wsa.h" 
+    "include/thread_pool.h"
+    "include/wsa.h"
 
     "src/connection.cpp"
     "src/snowflake.cpp"
     "src/http.cpp"
-    "src/http_request.cpp" 
+    "src/http_request.cpp"
     "src/http_response.cpp"
+    "src/thread_pool.cpp"
     "src/wsa.cpp"
 )
 
