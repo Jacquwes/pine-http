@@ -33,4 +33,14 @@ namespace pine
       co_await receive_raw_message(ec);
     }
   }
+
+  async_operation<http_response> client_connection::receive_response(std::error_code& ec)
+  {
+    std::string response_string = co_await this->receive_raw_message(ec);
+    if (ec)
+      co_return http_response{};
+
+    auto response = http_response::parse(response_string, ec);
+    co_return response;
+  }
 }

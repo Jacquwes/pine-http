@@ -5,6 +5,7 @@
 #include <thread>
 #include "connection.h"
 #include "coroutine.h"
+#include "http_response.h"
 
 namespace pine
 {
@@ -29,6 +30,11 @@ namespace pine
     /// @brief Start listening for messages from the server.
     /// @return An asynchronous task completed when the connection has been closed.
     async_task listen();
+
+    /// @brief Receive an HTTP response from the server.
+    /// @param ec The error code set if the response could not be received.
+    /// @return An asynchronous task completed when the response has been received.
+    async_operation<http_response> receive_response(std::error_code& ec);
 
   private:
     std::jthread client_thread;
