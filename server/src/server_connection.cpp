@@ -29,12 +29,15 @@ namespace pine
     co_await this->send_raw_message(response_string, ec);
   }
 
-  async_task server_connection::start()
+  async_task server_connection::start(std::error_code& ec)
   {
     this->is_connected = true;
 
     while (is_connected)
     {
+      const http_request& request = co_await this->receive_request(ec);
+      if (ec)
+        break;
     }
 
     co_return;

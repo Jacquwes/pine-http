@@ -33,8 +33,9 @@ namespace pine
     async_task send_response(http_response const& response, std::error_code& ec);
 
     /// @brief Start listening for messages from the client.
+    /// @param ec An error code to be set if an error occurs.
     /// @return An asynchronous task completed when the connection has been closed.
-    async_task start();
+    async_task start(std::error_code& ec);
 
   private:
     /// @brief Whether the connection is connected.
