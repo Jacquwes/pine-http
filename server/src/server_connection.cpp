@@ -8,7 +8,7 @@
 #include <connection.h>
 #include <coroutine.h>
 #include <http_request.h>
-
+#include <http_response.h>
 #include "server.h"
 #include "server_connection.h"
 
@@ -27,6 +27,12 @@ namespace pine
     auto request = http_request::parse(request_string, ec);
 
     co_return request;
+  }
+
+  async_task server_connection::send_response(http_response const& response, std::error_code& ec)
+  {
+    std::string response_string = response.to_string();
+    co_await this->send_raw_message(response_string, ec);
   }
 
   async_task server_connection::start()
