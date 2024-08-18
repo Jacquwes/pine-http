@@ -43,4 +43,10 @@ namespace pine
     auto response = http_response::parse(response_string, ec);
     co_return response;
   }
+
+  async_task client_connection::send_request(http_request const& request, std::error_code& ec)
+  {
+    auto request_string = request.to_string();
+    co_await this->send_raw_message(request_string, ec);
+  }
 }
