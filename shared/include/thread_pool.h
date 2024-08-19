@@ -15,7 +15,7 @@ namespace pine
   class thread_pool
   {
   public:
-    thread_pool& get_instance();
+    static thread_pool& get_instance();
 
     /// @brief Enqueue a task to be executed by the thread pool.
     /// @tparam task_type The type of the task to enqueue.
