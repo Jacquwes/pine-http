@@ -1,7 +1,11 @@
+#include <coroutine.h>
 #include <cstdint>
+#include <http_request.h>
+#include <http_response.h>
 #include <string>
+#include <system_error>
+#include <WinSock2.h>
 #include "client_connection.h"
-#include "client.h"
 #include "connection.h"
 
 namespace pine

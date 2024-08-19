@@ -32,13 +32,13 @@ namespace pine
       if (bytes_received == 0)
       {
         ec = std::make_error_code(std::errc::connection_reset);
-        co_return "";
+        co_return std::string();
       }
 
       if (bytes_received == SOCKET_ERROR)
       {
         ec = std::make_error_code(static_cast<std::errc>(WSAGetLastError()));
-        co_return "";
+        co_return std::string();
       }
 
       message.append(buffer.data(), bytes_received);

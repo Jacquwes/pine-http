@@ -5,10 +5,11 @@ add_executable(unit_tests)
 
 target_sources(unit_tests
   PRIVATE
-    "unit_tests.cpp"
     "http_request_test.cpp"
     "http_response_test.cpp"
     "http_utils_test.cpp"
+    "thread_pool_test.cpp"
+    "unit_tests.cpp"
 )
 
 target_link_libraries(unit_tests PRIVATE shared)

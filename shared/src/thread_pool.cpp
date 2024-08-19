@@ -1,14 +1,21 @@
 #include <functional>
 #include <mutex>
+#include <thread>
 #include <type_traits>
 #include <vector>
 #include "thread_pool.h"
 
 namespace pine
 {
-  thread_pool::thread_pool(size_t num_threads)
+  thread_pool& thread_pool::get_instance()
   {
-    this->start_pool(num_threads);
+    static thread_pool instance;
+    return instance;
+  }
+
+  thread_pool::thread_pool()
+  {
+    this->start_pool(std::jthread::hardware_concurrency());
   }
 
   thread_pool::~thread_pool()
