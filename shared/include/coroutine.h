@@ -128,21 +128,25 @@ struct async_operation
   }
 
   async_operation(async_operation const&) = delete;
+
+  /// @brief Move constructor for async_operation.
+  /// @param other The async_operation object to move from.
   async_operation(async_operation&& other) noexcept
     : _coroutine(other._coroutine)
   {
     other._coroutine = nullptr;
   }
+
   ~async_operation()
   {
-    if (_coroutine.address()) _coroutine.destroy();
+    if (this->_coroutine.address()) this->_coroutine.destroy();
   }
 
   async_operation& operator=(async_operation&& other) noexcept
   {
     if (&other != this)
     {
-      _coroutine = other._coroutine;
+      this->_coroutine = other._coroutine;
       other._coroutine = nullptr;
     }
   }
