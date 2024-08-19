@@ -106,9 +106,27 @@ struct async_operation
   }
 
   std::coroutine_handle<promise_type> _coroutine = nullptr;
+  std::shared_ptr<std::atomic_bool> cancelled = nullptr;
 
   async_operation() = default;
-  explicit async_operation(std::coroutine_handle<promise_type> coroutine) : _coroutine(coroutine) {}
+
+  /// @brief Constructor for async_operation.
+  /// @param coroutine The coroutine handle.
+  /// @param canceled The shared pointer to the canceled flag.
+  explicit async_operation(std::coroutine_handle<promise_type> coroutine,
+                           std::shared_ptr<std::atomic_bool> cancelled)
+    : _coroutine(coroutine)
+    , cancelled(cancelled)
+  {
+    static pine::thread_pool pool{};
+    pool.enqueue([this]
+                 {
+                   if (!*cancelled)
+                     this->_coroutine.resume();
+                   this->_coroutine.destroy();
+                 });
+  }
+
   async_operation(async_operation const&) = delete;
   async_operation(async_operation&& other) noexcept
     : _coroutine(other._coroutine)
