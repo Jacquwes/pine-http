@@ -35,14 +35,14 @@ struct async_result
 /// @tparam T The type of the value to return.
 /// @details For more information see: https://en.cppreference.com/w/cpp/language/coroutines
 template <typename T>
-	requires (!std::is_void_v<T>)
+  requires (!std::is_void_v<T>)
 struct async_operation
 {
   /// @brief The promise type of the coroutine.
   /// @details The promise type is responsible for managing the coroutine's
   /// lifetime and returning the result.
-	struct promise_type
-	{
+  struct promise_type
+  {
     /// @brief The promise object that holds the result.
     std::shared_ptr<std::promise<async_result<T>>> promise =
       std::make_shared<std::promise<async_result<T>>>();
@@ -63,10 +63,19 @@ struct async_operation
 
     /// @brief The initial suspend point of the coroutine.
     /// @return std::suspend_never
-		std::suspend_never initial_suspend() const noexcept { return {}; }
-		std::suspend_always final_suspend() const noexcept { return {}; }
-		void unhandled_exception() const {}
-		void return_value(T value) { _value = value; }
+    std::suspend_never initial_suspend() const noexcept { return {}; }
+
+    /// @brief The final suspend point of the coroutine.
+    /// @return std::suspend_always
+    std::suspend_always final_suspend() const noexcept { return {}; }
+
+    /// @brief Handle unhandled exceptions in the coroutine.
+    void unhandled_exception()
+    {
+      this->promise->set_value(async_result<T>(
+        std::make_error_code(std::errc::operation_canceled)
+      ));
+    }
 
     /// @brief Set the return value of the coroutine.
     /// @param result The async_result object to set as the return value.
@@ -75,50 +84,50 @@ struct async_operation
       if (!*cancelled)
         this->promise->set_value(std::move(result));
     }
-	};
+  };
 
-	bool await_ready() const { return false; }
-	void await_suspend(std::coroutine_handle<> h) const { h.resume(); }
-	auto await_resume() { return _coroutine.promise()._value; }
+  bool await_ready() const { return false; }
+  void await_suspend(std::coroutine_handle<> h) const { h.resume(); }
+  auto await_resume() { return _coroutine.promise()._value; }
 
-	std::coroutine_handle<promise_type> _coroutine = nullptr;
+  std::coroutine_handle<promise_type> _coroutine = nullptr;
 
-	async_operation() = default;
-	explicit async_operation(std::coroutine_handle<promise_type> coroutine) : _coroutine(coroutine) {}
-	async_operation(async_operation const&) = delete;
-	async_operation(async_operation&& other) noexcept
-		: _coroutine(other._coroutine)
-	{
-		other._coroutine = nullptr;
-	}
-	~async_operation()
-	{
-		if (_coroutine.address()) _coroutine.destroy();
-	}
+  async_operation() = default;
+  explicit async_operation(std::coroutine_handle<promise_type> coroutine) : _coroutine(coroutine) {}
+  async_operation(async_operation const&) = delete;
+  async_operation(async_operation&& other) noexcept
+    : _coroutine(other._coroutine)
+  {
+    other._coroutine = nullptr;
+  }
+  ~async_operation()
+  {
+    if (_coroutine.address()) _coroutine.destroy();
+  }
 
-	async_operation& operator=(async_operation&& other) noexcept
-	{
-		if (&other != this)
-		{
-			_coroutine = other._coroutine;
-			other._coroutine = nullptr;
-		}
-	}
+  async_operation& operator=(async_operation&& other) noexcept
+  {
+    if (&other != this)
+    {
+      _coroutine = other._coroutine;
+      other._coroutine = nullptr;
+    }
+  }
 };
 
 /// @brief An awaitable coroutine that returns nothing.
 struct async_task
 {
-	struct promise_type
-	{
-		async_task get_return_object() const noexcept { return {}; }
-		std::suspend_never initial_suspend() const noexcept { return {}; }
-		std::suspend_always final_suspend() const noexcept { return {}; }
-		void unhandled_exception() const {}
-		void return_void() const {}
-	};
+  struct promise_type
+  {
+    async_task get_return_object() const noexcept { return {}; }
+    std::suspend_never initial_suspend() const noexcept { return {}; }
+    std::suspend_always final_suspend() const noexcept { return {}; }
+    void unhandled_exception() const {}
+    void return_void() const {}
+  };
 
-	bool await_ready() const noexcept { return false; }
-	void await_suspend(std::coroutine_handle<> h) const noexcept { h.resume(); }
-	void await_resume() const noexcept {}
+  bool await_ready() const noexcept { return false; }
+  void await_suspend(std::coroutine_handle<> h) const noexcept { h.resume(); }
+  void await_resume() const noexcept {}
 };
