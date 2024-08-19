@@ -38,14 +38,43 @@ template <typename T>
 	requires (!std::is_void_v<T>)
 struct async_operation
 {
+  /// @brief The promise type of the coroutine.
+  /// @details The promise type is responsible for managing the coroutine's
+  /// lifetime and returning the result.
 	struct promise_type
 	{
-		T _value;
-		async_operation<T> get_return_object() noexcept { return async_operation<T>(std::coroutine_handle<promise_type>::from_promise(*this)); }
+    /// @brief The promise object that holds the result.
+    std::shared_ptr<std::promise<async_result<T>>> promise =
+      std::make_shared<std::promise<async_result<T>>>();
+
+    /// @brief The shared pointer to the canceled flag.
+    std::shared_ptr<std::atomic_bool> cancelled =
+      std::make_shared<std::atomic_bool>(false);
+
+    /// @brief Get the return object of the coroutine.
+    /// @return The async_operation object.
+    async_operation<T> get_return_object() noexcept
+    {
+      return async_operation<T>(
+        std::coroutine_handle<promise_type>::from_promise(*this),
+        this->cancelled
+      );
+    }
+
+    /// @brief The initial suspend point of the coroutine.
+    /// @return std::suspend_never
 		std::suspend_never initial_suspend() const noexcept { return {}; }
 		std::suspend_always final_suspend() const noexcept { return {}; }
 		void unhandled_exception() const {}
 		void return_value(T value) { _value = value; }
+
+    /// @brief Set the return value of the coroutine.
+    /// @param result The async_result object to set as the return value.
+    void return_value(async_result<T> result)
+    {
+      if (!*cancelled)
+        this->promise->set_value(std::move(result));
+    }
 	};
 
 	bool await_ready() const { return false; }
