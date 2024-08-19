@@ -7,10 +7,9 @@
 
 namespace pine
 {
-  inline thread_pool instance;
-
   thread_pool& thread_pool::get_instance()
   {
+    static thread_pool instance;
     return instance;
   }
 
