@@ -90,7 +90,12 @@ struct async_operation
 
   /// @brief Check if the awaitable is ready to resume.
   /// @return True if the awaitable is ready, false otherwise.
-  bool await_ready() const { return false; }
+  bool await_ready() const
+  {
+    auto future_status = this->get_future().wait_for(std::chrono::seconds(0));
+    bool is_ready = future_status == std::future_status::ready;
+    return is_ready;
+  }
 
   /// @brief Suspend the coroutine until it is resumed.
   /// @param h The coroutine handle.
