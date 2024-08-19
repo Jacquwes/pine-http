@@ -148,10 +148,11 @@ struct async_operation
   }
 };
 
-/// @brief An awaitable coroutine that returns nothing.
+  std::future<async_result<T>> get_future()
 struct async_task
 {
-  struct promise_type
+    return this->_coroutine.promise()->get_future();
+  }
   {
     async_task get_return_object() const noexcept { return {}; }
     std::suspend_never initial_suspend() const noexcept { return {}; }
