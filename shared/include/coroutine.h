@@ -86,9 +86,24 @@ struct async_operation
     }
   };
 
+  /// @brief Check if the awaitable is ready to resume.
+  /// @return True if the awaitable is ready, false otherwise.
   bool await_ready() const { return false; }
-  void await_suspend(std::coroutine_handle<> h) const { h.resume(); }
-  auto await_resume() { return _coroutine.promise()._value; }
+
+  /// @brief Suspend the coroutine until it is resumed.
+  /// @param h The coroutine handle.
+  bool await_suspend(std::coroutine_handle<> h) const
+  {
+    h.resume();
+    return false;
+  }
+
+  /// @brief Get the result of the coroutine.
+  /// @return The result of the coroutine.
+  async_result<T> await_resume() const
+  {
+    return this->_coroutine.promise()->promise->get_future().get();
+  }
 
   std::coroutine_handle<promise_type> _coroutine = nullptr;
 
