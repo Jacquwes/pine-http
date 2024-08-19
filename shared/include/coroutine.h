@@ -99,10 +99,14 @@ struct async_operation
 
   /// @brief Suspend the coroutine until it is resumed.
   /// @param h The coroutine handle.
-  bool await_suspend(std::coroutine_handle<> h) const
+  void await_suspend(std::coroutine_handle<> h) const
   {
+    static pine::thread_pool& pool = pine::thread_pool::get_instance();
+    pool.enqueue([this, h]
+                 {
+                   if (!*cancelled)
     h.resume();
-    return false;
+                 });
   }
 
   /// @brief Get the result of the coroutine.
