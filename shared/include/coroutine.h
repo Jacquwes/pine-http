@@ -24,11 +24,13 @@ struct async_result
 
   /// @brief Constructor for async_result with a value.
   /// @param value The value of the async result.
-  explicit async_result(T value) : value(value) {}
+  explicit(false) async_result(T value) : value(value) {}
 
   /// @brief Constructor for async_result with an error code.
   /// @param error The error code associated with the async result.
-  explicit async_result(std::error_code error) : error(error) {}
+  explicit(false) async_result(std::error_code error) : error(error) {}
+
+  explicit(false) operator T() const { return value; }
 };
 
 /// @brief An awaitable coroutine that returns a value.
