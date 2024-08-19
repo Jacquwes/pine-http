@@ -1,8 +1,10 @@
 #pragma once
 
 #include <coroutine>
-#include <thread>
+#include <future>
+#include <memory>
 #include <stdexcept>
+#include <thread>
 #include <type_traits>
 #include "thread_pool.h"
 
