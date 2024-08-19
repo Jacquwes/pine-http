@@ -164,7 +164,7 @@ struct async_operation
 
   std::future<async_result<T>> get_future()
   {
-    return this->_coroutine.promise()->get_future();
+    return this->_coroutine.promise().promise->get_future();
   }
 
   void cancel()
