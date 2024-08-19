@@ -150,11 +150,9 @@ struct async_operation
       other._coroutine = nullptr;
     }
   }
-};
 
   std::future<async_result<T>> get_future()
-struct async_task
-{
+  {
     return this->_coroutine.promise()->get_future();
   }
 
@@ -162,12 +160,4 @@ struct async_task
   {
     *cancelled = true;
   }
-    std::suspend_always final_suspend() const noexcept { return {}; }
-    void unhandled_exception() const {}
-    void return_void() const {}
-  };
-
-  bool await_ready() const noexcept { return false; }
-  void await_suspend(std::coroutine_handle<> h) const noexcept { h.resume(); }
-  void await_resume() const noexcept {}
 };
