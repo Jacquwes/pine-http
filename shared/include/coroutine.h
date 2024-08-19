@@ -113,7 +113,7 @@ struct async_operation
   /// @return The result of the coroutine.
   async_result<T> await_resume() const
   {
-    return this->_coroutine.promise()->promise->get_future().get();
+    return this->get_future().get();
   }
 
   std::coroutine_handle<promise_type> _coroutine = nullptr;
