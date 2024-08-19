@@ -129,7 +129,7 @@ struct async_operation
     : _coroutine(coroutine)
     , cancelled(cancelled)
   {
-    static pine::thread_pool pool{};
+    static pine::thread_pool& pool = pine::thread_pool::get_instance();
     pool.enqueue([this]
                  {
                    if (!*cancelled)
