@@ -153,9 +153,11 @@ struct async_task
 {
     return this->_coroutine.promise()->get_future();
   }
+
+  void cancel()
   {
-    async_task get_return_object() const noexcept { return {}; }
-    std::suspend_never initial_suspend() const noexcept { return {}; }
+    *cancelled = true;
+  }
     std::suspend_always final_suspend() const noexcept { return {}; }
     void unhandled_exception() const {}
     void return_void() const {}
