@@ -270,6 +270,8 @@ struct async_task
       this->_coroutine = other._coroutine;
       other._coroutine = nullptr;
     }
+
+    return *this;
   }
 
   std::future<std::error_code> get_future() const
