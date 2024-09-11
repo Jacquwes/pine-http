@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <thread>
 #include <type_traits>
+#include "expected.h"
 #include "thread_pool.h"
 
 /// @brief Represents the result of an async operation.
@@ -35,8 +36,9 @@ struct async_result
 
 /// @brief An awaitable coroutine that returns a value.
 /// @tparam T The type of the value to return.
+/// @tparam E The type of the error to return.
 /// @details For more information see: https://en.cppreference.com/w/cpp/language/coroutines
-template <typename T>
+template <typename T, typename E>
   requires (!std::is_void_v<T>)
 struct async_operation
 {
@@ -46,8 +48,8 @@ struct async_operation
   struct promise_type
   {
     /// @brief The promise object that holds the result.
-    std::shared_ptr<std::promise<async_result<T>>> promise =
-      std::make_shared<std::promise<async_result<T>>>();
+    std::shared_ptr<std::promise<std::expected<T, E>>> promise =
+      std::make_shared<std::promise<std::expected<T, E>>>();
 
     /// @brief The shared pointer to the canceled flag.
     std::shared_ptr<std::atomic_bool> cancelled =
@@ -55,9 +57,9 @@ struct async_operation
 
     /// @brief Get the return object of the coroutine.
     /// @return The async_operation object.
-    async_operation<T> get_return_object() noexcept
+    async_operation<T, E> get_return_object() noexcept
     {
-      return async_operation<T>(
+      return async_operation<T, E>(
         std::coroutine_handle<promise_type>::from_promise(*this),
         this->cancelled
       );
@@ -74,14 +76,14 @@ struct async_operation
     /// @brief Handle unhandled exceptions in the coroutine.
     void unhandled_exception()
     {
-      this->promise->set_value(async_result<T>(
+      this->promise->set_value(std::expected<T, E>(
         std::make_error_code(std::errc::operation_canceled)
       ));
     }
 
     /// @brief Set the return value of the coroutine.
-    /// @param result The async_result object to set as the return value.
-    void return_value(async_result<T> result)
+    /// @param result The result of the coroutine.
+    void return_value(std::expected<T, E> result)
     {
       if (!*cancelled)
         this->promise->set_value(std::move(result));
@@ -111,7 +113,7 @@ struct async_operation
 
   /// @brief Get the result of the coroutine.
   /// @return The result of the coroutine.
-  async_result<T> await_resume() const
+  std::expected<T, E> await_resume() const
   {
     return this->get_future().get();
   }
@@ -162,7 +164,7 @@ struct async_operation
     }
   }
 
-  std::future<async_result<T>> get_future() const
+  std::future<std::expected<T, E>> get_future() const
   {
     return this->_coroutine.promise().promise->get_future();
   }
