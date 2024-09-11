@@ -9,31 +9,6 @@
 #include "expected.h"
 #include "thread_pool.h"
 
-/// @brief Represents the result of an async operation.
-/// @tparam T The type of the value to return.
-template <typename T>
-struct async_result
-{
-  /// @brief The value of the async result.
-  T value{};
-
-  /// @brief The error code associated with the async result.
-  std::error_code error{};
-
-  /// @brief Default constructor for async_result.
-  async_result() = default;
-
-  /// @brief Constructor for async_result with a value.
-  /// @param value The value of the async result.
-  explicit(false) async_result(T value) : value(value) {}
-
-  /// @brief Constructor for async_result with an error code.
-  /// @param error The error code associated with the async result.
-  explicit(false) async_result(std::error_code error) : error(error) {}
-
-  explicit(false) operator T() const { return value; }
-};
-
 /// @brief An awaitable coroutine that returns a value.
 /// @tparam T The type of the value to return.
 /// @tparam E The type of the error to return.
