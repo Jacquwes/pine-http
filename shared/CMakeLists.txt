@@ -10,6 +10,7 @@ target_sources(shared
     "include/connection.h"
     "include/coroutine.h"
     "include/error.h"
+    "include/expected.h"
     "include/http.h"
     "include/http_request.h"
     "include/http_response.h"
