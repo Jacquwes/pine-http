@@ -162,3 +162,119 @@ struct async_operation
     *cancelled = true;
   }
 };
+
+/// @brief An awaitable coroutine that returns void.
+/// @tparam E The type of the error to return.
+/// @details This is a specialization of async_operation for void return type.
+template <typename E>
+struct async_operation<void, E>
+{
+  /// @brief The promise type of the coroutine.
+  struct promise_type
+  {
+    std::shared_ptr<std::promise<std::expected<void, E>>> promise =
+      std::make_shared<std::promise<std::expected<void, E>>>();
+
+    std::shared_ptr<std::atomic_bool> cancelled =
+      std::make_shared<std::atomic_bool>(false);
+
+    async_operation<void, E> get_return_object() noexcept
+    {
+      return async_operation<void, E>(
+        std::coroutine_handle<promise_type>::from_promise(*this),
+        this->cancelled
+      );
+    }
+
+    std::suspend_never initial_suspend() const noexcept { return {}; }
+    std::suspend_always final_suspend() const noexcept { return {}; }
+
+    void unhandled_exception()
+    {
+      this->promise->set_value(std::expected<void, E>(
+        std::unexpected(std::make_error_code(std::errc::operation_canceled))
+      ));
+    }
+
+    void return_value(E error = 0)
+    {
+      if (!*cancelled)
+        this->promise->set_value(std::make_unexpected(std::move(error)));
+    }
+  };
+
+  bool await_ready() const
+  {
+    auto future_status = this->get_future().wait_for(std::chrono::seconds(0));
+    return future_status == std::future_status::ready;
+  }
+
+  void await_suspend(std::coroutine_handle<> h) const
+  {
+    static pine::thread_pool& pool = pine::thread_pool::get_instance();
+    pool.enqueue([this, h]
+                 {
+                   if (!*cancelled)
+                     h.resume();
+                 });
+  }
+
+  std::expected<void, E> await_resume() const
+  {
+    return this->get_future().get();
+  }
+
+  std::coroutine_handle<promise_type> _coroutine = nullptr;
+  std::shared_ptr<std::atomic_bool> cancelled = nullptr;
+
+  async_operation() = default;
+
+  explicit async_operation(std::coroutine_handle<promise_type> coroutine,
+                           std::shared_ptr<std::atomic_bool> cancelled)
+    : _coroutine(coroutine)
+    , cancelled(cancelled)
+  {
+    static pine::thread_pool& pool = pine::thread_pool::get_instance();
+    pool.enqueue([this]
+                 {
+                   if (!*this->cancelled)
+                     this->_coroutine.resume();
+                   this->_coroutine.destroy();
+                 });
+  }
+
+  async_operation(async_operation const&) = delete;
+
+  async_operation(async_operation&& other) noexcept
+    : _coroutine(other._coroutine)
+    , cancelled(std::move(other.cancelled))
+  {
+    other._coroutine = nullptr;
+  }
+
+  ~async_operation()
+  {
+    if (this->_coroutine.address()) this->_coroutine.destroy();
+  }
+
+  async_operation& operator=(async_operation&& other) noexcept
+  {
+    if (&other != this)
+    {
+      this->_coroutine = other._coroutine;
+      this->cancelled = std::move(other.cancelled);
+      other._coroutine = nullptr;
+    }
+    return *this;
+  }
+
+  std::future<std::expected<void, E>> get_future() const
+  {
+    return this->_coroutine.promise().promise->get_future();
+  }
+
+  void cancel()
+  {
+    *cancelled = true;
+  }
+};
