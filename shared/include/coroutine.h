@@ -51,9 +51,10 @@ struct async_operation
     /// @brief Handle unhandled exceptions in the coroutine.
     void unhandled_exception()
     {
-      this->promise->set_value(std::expected<T, E>(
-        std::make_error_code(std::errc::operation_canceled)
-      ));
+      this->promise->set_value(
+        std::make_unexpected(
+        std::make_error_code(
+        std::errc::operation_canceled)));
     }
 
     /// @brief Set the return value of the coroutine.
