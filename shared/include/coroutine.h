@@ -64,6 +64,18 @@ struct async_operation
       if (!*cancelled)
         this->promise->set_value(std::move(result));
     }
+
+    void return_value(T result)
+    {
+      if (!*cancelled)
+        this->promise->set_value(std::move(result));
+    }
+
+    void return_value(E error = 0)
+    {
+      if (!*cancelled)
+        this->promise->set_value(std::make_unexpected(std::move(error)));
+    }
   };
 
   /// @brief Check if the awaitable is ready to resume.
