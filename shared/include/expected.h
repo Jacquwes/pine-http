@@ -2812,10 +2812,7 @@ namespace tl
 
 namespace std
 {
-  using tl::unexpected;
-  using tl::expected;
-  using tl::make_unexpected;
-  using tl::swap;
+  using namespace tl;
 } // namespace std
 
 #endif
