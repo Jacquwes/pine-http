@@ -15,7 +15,6 @@
 /// @tparam E The type of the error to return.
 /// @details For more information see: https://en.cppreference.com/w/cpp/language/coroutines
 template <typename T, typename E>
-  requires (!std::is_void_v<T>)
 struct async_operation
 {
   /// @brief The promise type of the coroutine.
