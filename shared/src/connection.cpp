@@ -8,6 +8,7 @@
 #include <system_error>
 #include "connection.h"
 #include "coroutine.h"
+#include "error.h"
 #include "snowflake.h"
 
 namespace pine
@@ -18,8 +19,8 @@ namespace pine
     std::cout << "[Connection] New connection: " << id << std::endl;
   }
 
-  async_operation<std::string> connection::receive_raw_message(
-    std::error_code& ec)
+  async_operation<std::string, std::error_code>
+    connection::receive_raw_message() const
   {
     static constexpr size_t chunk_size = 1024;
     std::array<char, chunk_size> buffer{};
@@ -27,18 +28,19 @@ namespace pine
 
     while (true)
     {
-      size_t bytes_received = recv(this->socket, buffer.data(), buffer.size(), 0);
+      size_t bytes_received =
+        recv(this->socket, buffer.data(), buffer.size(), 0);
 
       if (bytes_received == 0)
       {
-        ec = std::make_error_code(std::errc::connection_reset);
-        co_return std::string();
+        co_return std::make_error_code(
+          std::errc::connection_reset);
       }
 
       if (bytes_received == SOCKET_ERROR)
       {
-        ec = std::make_error_code(static_cast<std::errc>(WSAGetLastError()));
-        co_return std::string();
+        co_return std::make_error_code(
+          static_cast<std::errc>(WSAGetLastError()));
       }
 
       message.append(buffer.data(), bytes_received);
@@ -50,12 +52,11 @@ namespace pine
     co_return message;
   }
 
-
-  async_task connection::send_raw_message(std::string_view raw_message,
-                                          std::error_code& ec)
+  async_operation<void, std::error_code> connection::send_raw_message(
+    std::string_view raw_message) const
   {
     if (raw_message.empty())
-      co_return;
+      co_return pine::make_error_code(pine::error::success);
 
     size_t bytes_sent = send(this->socket,
                              raw_message.data(),
@@ -64,9 +65,16 @@ namespace pine
 
     if (bytes_sent == SOCKET_ERROR)
     {
-      ec = std::make_error_code(static_cast<std::errc>(WSAGetLastError()));
-      co_return;
+      co_return std::make_error_code(static_cast<std::errc>(WSAGetLastError()));
     }
+
+    if (bytes_sent != raw_message.size())
+    {
+      co_return std::make_error_code(
+        std::errc::message_size);
+    }
+
+    co_return pine::make_error_code(pine::error::success);
   }
 
   void connection::close()
