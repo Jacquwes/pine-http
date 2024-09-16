@@ -2,9 +2,7 @@
 #include <map>
 #include <string>
 #include <system_error>
-#include <type_traits>
-#include <utility>
-#include "error.h"
+#include "expected.h"
 #include "http.h"
 #include "http_request.h"
 
@@ -18,29 +16,41 @@ namespace pine
     : method(method), uri(uri), version(version), headers(headers), body(body)
   {}
 
-  http_request http_request::parse(const std::string& request, std::error_code& ec)
+  std::expected<http_request, std::error_code>
+    http_request::parse(const std::string& request)
   {
     http_request result;
 
     size_t offset = 0;
-    result.method = http_utils::try_get_method(request, offset, ec);
-    if (ec) return result;
+    const auto& method_result = http_utils::try_get_method(request, offset);
+    if (!method_result)
+      return std::make_unexpected(method_result.error());
+    result.method = method_result.value();
     offset += strlen(" ");
 
-    result.uri = http_utils::try_get_uri(request, offset, ec);
-    if (ec) return result;
+    const auto& uri_result = http_utils::try_get_uri(request, offset);
+    if (!uri_result)
+      return std::make_unexpected(uri_result.error());
+    result.uri = uri_result.value();
     offset += strlen(" ");
 
-    result.version = http_utils::try_get_version(request, offset, ec);
-    if (ec) return result;
+    const auto& version_result = http_utils::try_get_version(request, offset);
+    if (!version_result)
+      return std::make_unexpected(version_result.error());
+    result.version = version_result.value();
     offset += strlen(crlf);
 
-    result.headers = http_utils::try_get_headers(request, offset, ec);
-    if (ec) return result;
+    const auto& headers_result = http_utils::try_get_headers(request, offset);
+    if (!headers_result)
+      return std::make_unexpected(headers_result.error());
+    result.headers = headers_result.value();
 
     if (offset < request.size())
     {
-      result.body = http_utils::try_get_body(request, offset, ec);
+      const auto& body_result = http_utils::try_get_body(request, offset);
+      if (!body_result)
+        return std::make_unexpected(body_result.error());
+      result.body = body_result.value();
     }
 
     return result;

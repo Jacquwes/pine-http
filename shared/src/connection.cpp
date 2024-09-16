@@ -52,8 +52,8 @@ namespace pine
     co_return message;
   }
 
-  async_operation<void, std::error_code> connection::send_raw_message(
-    std::string_view raw_message) const
+  async_operation<void, std::error_code>
+    connection::send_raw_message(std::string_view raw_message) const
   {
     if (raw_message.empty())
       co_return pine::make_error_code(pine::error::success);
@@ -65,7 +65,8 @@ namespace pine
 
     if (bytes_sent == SOCKET_ERROR)
     {
-      co_return std::make_error_code(static_cast<std::errc>(WSAGetLastError()));
+      co_return std::make_error_code(
+        static_cast<std::errc>(WSAGetLastError()));
     }
 
     if (bytes_sent != raw_message.size())

@@ -1,14 +1,12 @@
 #pragma once
 
+#include <connection.h>
+#include <coroutine.h>
+#include <http_request.h>
+#include <http_response.h>
 #include <memory>
-#include <mutex>
-#include <string_view>
-#include <thread>
-#include "connection.h"
-#include "coroutine.h"
-#include "http_request.h"
-#include "http_response.h"
-#include "snowflake.h"
+#include <system_error>
+#include <WinSock2.h>
 
 namespace pine
 {
@@ -22,20 +20,17 @@ namespace pine
     explicit server_connection(SOCKET socket);
 
     /// @brief Receive an HTTP request.
-    /// @param ec An error code to be set if an error occurs.
     /// @return An asynchronous task completed when the request has been received.
-    async_operation<http_request> receive_request(std::error_code& ec);
+    async_operation<http_request, std::error_code> receive_request() const;
 
     /// @brief Send an HTTP response.
     /// @param response The response to send.
-    /// @param ec An error code to be set if an error occurs.
     /// @return An asynchronous task completed when the response has been sent.
-    async_task send_response(http_response const& response, std::error_code& ec);
+    async_operation<void, std::error_code> send_response(http_response const& response) const;
 
     /// @brief Start listening for messages from the client.
-    /// @param ec An error code to be set if an error occurs.
     /// @return An asynchronous task completed when the connection has been closed.
-    async_task start(std::error_code& ec);
+    async_operation<void, std::error_code> start();
 
   private:
     /// @brief Whether the connection is connected.

@@ -7,11 +7,10 @@
 int main()
 {
   pine::server server;
-  std::error_code ec;
-  server.start(ec);
-  if (ec)
+
+  if (auto server_result = server.start(); !server_result)
   {
-    std::cerr << "Error: " << ec.message() << std::endl;
+    std::cerr << "Error: " << server_result.error().message() << std::endl;
     return 1;
   }
 

@@ -6,37 +6,35 @@
 #include <system_error>
 #include <utility>
 #include "error.h"
+#include "expected.h"
 #include "http.h"
 
 namespace pine::http_utils
 {
-  std::string try_get_body(std::string_view request,
-                           size_t& offset,
-                           std::error_code& ec)
+  std::expected<std::string, std::error_code>
+    try_get_body(std::string_view request, size_t& offset)
   {
     if (offset >= request.size())
     {
-      ec = make_error_code(error::parse_error_body);
-      return {};
+      return std::make_unexpected(
+        make_error_code(error::parse_error_body));
     }
 
-    auto body = std::string(request.substr(offset));
+    const auto& body = std::string(request.substr(offset));
     offset = request.size();
 
     return body;
   }
 
-  std::pair<std::string, std::string> try_get_header(std::string_view request,
-                                                     size_t& offset,
-                                                     std::error_code& ec)
+  std::expected<std::pair<std::string, std::string>, std::error_code>
+    try_get_header(std::string_view request, size_t& offset)
   {
     size_t start = offset;
     size_t end = request.find(crlf, start);
     size_t colon = request.find(':', start);
     if (colon == std::string::npos || end == std::string::npos || colon > end)
     {
-      ec = make_error_code(error::parse_error_headers);
-      return {};
+      return std::make_unexpected(make_error_code(error::parse_error_headers));
     }
 
     size_t name_start = start;
@@ -46,15 +44,16 @@ namespace pine::http_utils
 
     offset = end + strlen(crlf);
 
-    auto name = std::string(request.substr(name_start, name_end - name_start));
-    auto value = std::string(request.substr(value_start, value_end - value_start));
+    const auto& name = std::string(
+      request.substr(name_start, name_end - name_start));
+    const auto& value = std::string(
+      request.substr(value_start, value_end - value_start));
 
-    return { name, value };
+    return std::make_pair(name, value);
   }
 
-  std::map<std::string, std::string> try_get_headers(const std::string& request,
-                                                     size_t& offset,
-                                                     std::error_code& ec)
+  std::expected<std::map<std::string, std::string>, std::error_code>
+    try_get_headers(const std::string& request, size_t& offset)
   {
     std::map<std::string, std::string> result;
 
@@ -68,8 +67,10 @@ namespace pine::http_utils
         return result;
       }
 
-      auto [name, value] = try_get_header(request, offset, ec);
-      if (ec) break;
+      const auto& header_result = try_get_header(request, offset);
+      if (!header_result)
+        return std::make_unexpected(header_result.error());
+      const auto& [name, value] = header_result.value();
 
       result.insert_or_assign(name, value);
     }
@@ -77,9 +78,8 @@ namespace pine::http_utils
     return {};
   }
 
-  http_method try_get_method(std::string_view request,
-                             size_t& offset,
-                             std::error_code& ec)
+  std::expected<http_method, std::error_code>
+    try_get_method(std::string_view request, size_t& offset)
   {
     for (const auto& [method, method_string] : http_method_strings)
     {
@@ -90,18 +90,17 @@ namespace pine::http_utils
       }
     }
 
-    ec = make_error_code(error::parse_error_method);
-    return {};
+    return std::make_unexpected(
+      make_error_code(error::parse_error_method));
   }
 
-  http_status try_get_status(std::string_view request,
-                             size_t& offset,
-                             std::error_code& ec)
+  std::expected<http_status, std::error_code>
+    try_get_status(std::string_view request, size_t& offset)
   {
     for (const auto& [status, status_string] : http_status_strings)
     {
-      auto status_code_string = std::to_string(static_cast<int>(status));
-      std::string expected_status = std::format("{} {}", status_code_string, status_string);
+      const auto& status_code_string = std::to_string(static_cast<int>(status));
+      const std::string& expected_status = std::format("{} {}", status_code_string, status_string);
 
       if (request.substr(offset).starts_with(expected_status))
       {
@@ -110,35 +109,34 @@ namespace pine::http_utils
       }
     }
 
-    ec = make_error_code(error::parse_error_status);
-    return {};
+    return std::make_unexpected(
+      make_error_code(error::parse_error_status));
   }
 
-  std::string try_get_uri(std::string_view request,
-                          size_t& offset,
-                          std::error_code& ec)
+  std::expected<std::string, std::error_code>
+    try_get_uri(std::string_view request, size_t& offset)
   {
     if (request.at(offset) != '/')
     {
-      ec = make_error_code(error::parse_error_uri);
-      return {};
+      return std::make_unexpected(
+        make_error_code(error::parse_error_uri));
     }
 
     size_t start = offset;
     size_t end = request.find(' ', start);
     if (end == std::string::npos)
     {
-      ec = make_error_code(error::parse_error_uri);
-      return {};
+      return std::make_unexpected(
+        make_error_code(error::parse_error_uri));
     }
 
     offset = end;
     return std::string(request.substr(start, end - start));
   }
 
-  http_version try_get_version(std::string_view request,
-                               size_t& offset,
-                               std::error_code& ec)
+  std::expected<http_version, std::error_code>
+    try_get_version(std::string_view request,
+                    size_t& offset)
   {
     for (const auto& [version, version_string] : http_version_strings)
     {
@@ -149,7 +147,7 @@ namespace pine::http_utils
       }
     }
 
-    ec = make_error_code(error::parse_error_version);
-    return {};
+    return std::make_unexpected(
+      make_error_code(error::parse_error_version));
   }
 }

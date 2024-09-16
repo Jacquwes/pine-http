@@ -30,18 +30,16 @@ namespace pine
 
     /// @brief Start listening for messages from the server.
     /// @return An asynchronous task completed when the connection has been closed.
-    async_task listen();
+    async_operation<void, std::error_code> listen() const;
 
     /// @brief Receive an HTTP response from the server.
-    /// @param ec The error code set if the response could not be received.
     /// @return An asynchronous task completed when the response has been received.
-    async_operation<http_response> receive_response(std::error_code& ec);
+    async_operation<http_response, std::error_code> receive_response() const;
 
     /// @brief Send an HTTP request to the server.
     /// @param request The request to send.
-    /// @param ec The error code set if the request could not be sent.
     /// @return An asynchronous task completed when the request has been sent.
-    async_task send_request(http_request const& request, std::error_code& ec);
+    async_operation<void, std::error_code> send_request(http_request const& request) const;
 
   private:
     std::jthread client_thread;

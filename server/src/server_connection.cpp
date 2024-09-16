@@ -5,6 +5,7 @@
 #include <string>
 #include <system_error>
 #include <WinSock2.h>
+#include <error.h>
 #include "server_connection.h"
 
 namespace pine
@@ -12,34 +13,51 @@ namespace pine
   server_connection::server_connection(SOCKET socket) : connection(socket)
   {}
 
-  async_operation<http_request> pine::server_connection::receive_request(std::error_code& ec)
+  async_operation<http_request, std::error_code>
+    pine::server_connection::receive_request() const
   {
-    std::string request_string = co_await this->receive_raw_message(ec);
-    if (ec)
-      co_return http_request();
+    const auto& receive_message_result = co_await this->receive_raw_message();
+    if (!receive_message_result)
+      co_return receive_message_result.error();
 
-    auto request = http_request::parse(request_string, ec);
+    const std::string& request_string = receive_message_result.value();
 
-    co_return request;
+    const auto& request_result = http_request::parse(request_string);
+    if (!request_result)
+      co_return request_result.error();
+
+    co_return request_result.value();
   }
 
-  async_task server_connection::send_response(http_response const& response, std::error_code& ec)
+  async_operation<void, std::error_code>
+    server_connection::send_response(http_response const& response) const
   {
-    std::string response_string = response.to_string();
-    co_await this->send_raw_message(response_string, ec);
+    const std::string& response_string = response.to_string();
+    const auto& send_message_result =
+      co_await this->send_raw_message(response_string);
+
+    if (!send_message_result)
+      co_return send_message_result.error();
+
+    co_return make_error_code(error::success);
   }
 
-  async_task server_connection::start(std::error_code& ec)
+  async_operation<void, std::error_code>
+    server_connection::start()
   {
     this->is_connected = true;
 
     while (is_connected)
     {
-      const http_request& request = co_await this->receive_request(ec);
-      if (ec)
-        break;
+      const auto& request_result = co_await this->receive_request();
+      if (!request_result)
+      {
+        this->is_connected = false;
+        co_return request_result.error();
+      }
     }
 
-    co_return;
+    this->is_connected = false;
+    co_return make_error_code(error::success);
   }
 }

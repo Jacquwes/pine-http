@@ -1,16 +1,16 @@
 #pragma once
 
+#include <coroutine.h>
 #include <cstdint>
+#include <expected.h>
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <string_view>
 #include <system_error>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include "coroutine.h"
-#include "server_connection.h"
+#include <WinSock2.h>
 
 namespace pine
 {
@@ -24,7 +24,7 @@ namespace pine
     explicit server(const char* port = "80");
 
     /// @brief Start listening for connections.
-    void start(std::error_code& ec);
+    std::expected<void, std::error_code> start();
 
     /// @brief Stop listening for connections.
     void stop();
@@ -33,16 +33,16 @@ namespace pine
     /// @param client_id Id of the client to disconnect.
     /// @return An asynchronous task completed when the client has been
     /// disconnected.
-    async_task disconnect_client(uint64_t const& client_id);
+    async_operation<void, std::error_code> disconnect_client(
+      uint64_t const& client_id);
 
   private:
     /// @brief Accept clients.
     /// This function waits for clients to connect and creates a server
     /// connection for each client.
-    /// @param ec An error code to be set if an error occurs.
     /// @return An asynchronous task completed when the server has stopped
     /// listening.
-    void accept_clients(std::error_code& ec);
+    std::expected<void, std::error_code> accept_clients();
 
     std::mutex delete_clients_mutex;
     std::mutex mutate_clients_mutex;
@@ -65,54 +65,59 @@ namespace pine
     /// @brief Call this function to add a callback that will be executed when
     /// a new client attempts to connect to the server.
     /// @return A reference to this server.
-    server& on_connection_attempt(std::function < async_task(
-      server&,
+    server&
+      on_connection_attempt(
+      std::function<async_operation<void, std::error_code>(server&,
       std::shared_ptr<server_connection> const&)> const& callback
-    );
+      );
 
     /// @brief Call this function to add a callback that will be executed when
     /// a client fails
     /// to connect to the server.
     /// @return A reference to this server.
-    server& on_connection_failed(std::function < async_task(
+    server&
+      on_connection_failed(
+      std::function < async_operation<void, std::error_code>(
       server&,
       std::shared_ptr<server_connection> const&)> const& callback
-    );
+      );
 
     /// @brief Call this function to add a callback that will be executed when
     /// a client successfully
     /// connects to the server.
     /// @return A reference to this server.
-    server& on_connection(std::function < async_task(
+    server&
+      on_connection(std::function < async_operation<void, std::error_code>(
       server&,
       std::shared_ptr<server_connection> const&)> const& callback
-    );
+      );
 
     /// @brief Call this function to add a callback that will be executed when
     /// the server is ready
     /// to accept connections.
     /// @return A reference to this server.
-    server& on_ready(std::function < async_task(
+    server&
+      on_ready(std::function < async_operation<void, std::error_code>(
       server&)> const& callback
     );
 
   private:
-    std::vector<std::function<async_task(
+    std::vector<std::function<async_operation<void, std::error_code>(
       server&,
       std::shared_ptr<server_connection> const&)>
     > on_connection_attemps_callbacks;
 
-    std::vector<std::function<async_task(
+    std::vector<std::function<async_operation<void, std::error_code>(
       server&,
       std::shared_ptr<server_connection> const&)>
     > on_connection_failed_callbacks;
 
-    std::vector<std::function<async_task(
+    std::vector<std::function<async_operation<void, std::error_code>(
       server&,
       std::shared_ptr<server_connection> const&)>
     > on_connection_callbacks;
 
-    std::vector < std::function < async_task(
+    std::vector < std::function < async_operation<void, std::error_code>(
       server&)>
     > on_ready_callbacks;
   };

@@ -23,23 +23,23 @@ namespace pine
     virtual ~connection() = default;
 
     /// @brief Receive a raw message to the connection.
-    /// @param ec Error code.
     /// @return An asynchronous operation that returns the received bytes.
-    async_operation<std::string, std::error_code> receive_raw_message() const;
+    async_operation<std::string, std::error_code>
+      receive_raw_message() const;
 
     /// @brief Send a raw message to the connection.
     /// @param raw_message Message to send.
-    /// @param ec Error code.
     /// @return An asynchronous task completed when the message has been sent.
-    async_operation<void, std::error_code> send_raw_message(
-      std::string_view raw_message) const;
+    async_operation<void, std::error_code>
+      send_raw_message(std::string_view raw_message) const;
 
     /// @brief Close the connection.
     void close();
 
     /// @brief Get the id of the connection.
     /// @return The id of the connection.
-    constexpr const snowflake& get_id() const noexcept { return id; }
+    constexpr const snowflake&
+      get_id() const noexcept { return id; }
 
   private:
     /// @brief The id of the connection.

@@ -16,7 +16,8 @@ namespace pine
 
   bool client_connection::connect(std::string const& host, uint16_t const& port)
   {
-    if (!this->connect(host, port))
+    // TODO: ???
+    if (!connect(host, port))
       return false;
 
     this->listen();
@@ -29,28 +30,39 @@ namespace pine
     this->close();
   }
 
-  async_task client_connection::listen()
+  async_operation<void, std::error_code>
+    client_connection::listen() const
   {
     while (true)
     {
-      std::error_code ec;
-      co_await receive_raw_message(ec);
+      const auto& received_message_result = co_await receive_raw_message();
+      if (!received_message_result)
+        co_return received_message_result.error();
     }
   }
 
-  async_operation<http_response> client_connection::receive_response(std::error_code& ec)
+  async_operation<http_response, std::error_code>
+    client_connection::receive_response() const
   {
-    std::string response_string = co_await this->receive_raw_message(ec);
-    if (ec)
-      co_return http_response{};
+    const auto& received_message_result = co_await this->receive_raw_message();
+    if (!received_message_result)
+      co_return received_message_result.error();
 
-    auto response = http_response::parse(response_string, ec);
+    const auto& response_string = received_message_result.value();
+
+    auto response = http_response::parse(response_string);
     co_return response;
   }
 
-  async_task client_connection::send_request(http_request const& request, std::error_code& ec)
+  async_operation<void, std::error_code>
+    client_connection::send_request(http_request const& request) const
   {
-    auto request_string = request.to_string();
-    co_await this->send_raw_message(request_string, ec);
+    const auto& request_string = request.to_string();
+
+    const auto& send_result = co_await this->send_raw_message(request_string);
+    if (!send_result)
+      co_return send_result.error();
+
+    co_return {};
   }
 }
