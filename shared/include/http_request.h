@@ -84,9 +84,17 @@ namespace pine
 
     /// @brief Sets the body of the HTTP request.
     /// @param value The new body value.
-    constexpr void set_body(std::string_view value)
+    void set_body(std::string_view value)
     {
       this->body = value;
+      if (value.empty())
+      {
+        this->headers.erase("Content-Length");
+      }
+      else
+      {
+        this->headers.insert_or_assign("Content-Length", std::to_string(value.size()));
+      }
     }
 
     /// @brief Sets the value of the specified header in the HTTP request.
