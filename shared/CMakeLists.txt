@@ -10,6 +10,7 @@ target_sources(shared
     "include/connection.h"
     "include/coroutine.h"
     "include/error.h"
+    "include/expected.h"
     "include/http.h"
     "include/http_request.h"
     "include/http_response.h"
@@ -18,10 +19,10 @@ target_sources(shared
     "include/wsa.h"
 
     "src/connection.cpp"
-    "src/snowflake.cpp"
     "src/http.cpp"
     "src/http_request.cpp"
     "src/http_response.cpp"
+    "src/snowflake.cpp"
     "src/thread_pool.cpp"
     "src/wsa.cpp"
 )

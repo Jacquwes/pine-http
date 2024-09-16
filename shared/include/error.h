@@ -14,6 +14,7 @@ namespace pine
     parse_error_headers,
     parse_error_body,
     parse_error_status,
+    client_not_found,
   };
 
   class error_category : public std::error_category
