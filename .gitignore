@@ -4,6 +4,9 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 docs
+vcpkg_installed
+CMake*Presets.json
+vcpkg-configuration.json
 
 # User-specific files
 *.rsuser
