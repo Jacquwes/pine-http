@@ -66,12 +66,12 @@ jobs:
 
     - name: Install asio and gtest linux
       # Install dependencies using the appropriate triplet for the current runner operating system
-      run: ${{ github.workspace }}/vcpkg/vcpkg install asio:x64-linux gtest:x64-linux
+      run: ${{ github.workspace }}/vcpkg/vcpkg install
       if: matrix.os == 'ubuntu-latest'
 
     - name: Install asio and gtest windows
   # Install dependencies using the appropriate triplet for the current runner operating system
-      run: ${{ github.workspace }}/vcpkg/vcpkg install asio:x64-windows gtest:x64-windows
+      run: ${{ github.workspace }}/vcpkg/vcpkg install
       if: matrix.os == 'windows-latest'
 
     - name: Set reusable strings
