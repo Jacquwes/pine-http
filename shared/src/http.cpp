@@ -11,13 +11,14 @@
 
 namespace pine::http_utils
 {
-  std::expected<std::string, std::error_code>
+  std::expected<std::string, pine::error>
     try_get_body(std::string_view request, size_t& offset)
   {
     if (offset >= request.size())
     {
       return std::make_unexpected(
-        make_error_code(error::parse_error_body));
+        error(error_code::parse_error_body,
+              "There is no body at this position."));
     }
 
     const auto& body = std::string(request.substr(offset));
@@ -26,7 +27,7 @@ namespace pine::http_utils
     return body;
   }
 
-  std::expected<std::pair<std::string, std::string>, std::error_code>
+  std::expected<std::pair<std::string, std::string>, pine::error>
     try_get_header(std::string_view request, size_t& offset)
   {
     size_t start = offset;
@@ -34,7 +35,10 @@ namespace pine::http_utils
     size_t colon = request.find(':', start);
     if (colon == std::string::npos || end == std::string::npos || colon > end)
     {
-      return std::make_unexpected(make_error_code(error::parse_error_headers));
+      return std::make_unexpected(
+        error(error_code::parse_error_headers,
+              "The header is not formatted correctly."));
+
     }
 
     size_t name_start = start;
@@ -52,7 +56,7 @@ namespace pine::http_utils
     return std::make_pair(name, value);
   }
 
-  std::expected<std::map<std::string, std::string>, std::error_code>
+  std::expected<std::map<std::string, std::string>, pine::error>
     try_get_headers(const std::string& request, size_t& offset)
   {
     std::map<std::string, std::string> result;
@@ -78,7 +82,7 @@ namespace pine::http_utils
     return {};
   }
 
-  std::expected<http_method, std::error_code>
+  std::expected<http_method, pine::error>
     try_get_method(std::string_view request, size_t& offset)
   {
     for (const auto& [method, method_string] : http_method_strings)
@@ -90,17 +94,19 @@ namespace pine::http_utils
       }
     }
 
-    return std::make_unexpected(
-      make_error_code(error::parse_error_method));
+    return std::make_unexpected(error(error_code::parse_error_method,
+                                      "The method is not recognized."));
   }
 
-  std::expected<http_status, std::error_code>
+  std::expected<http_status, pine::error>
     try_get_status(std::string_view request, size_t& offset)
   {
     for (const auto& [status, status_string] : http_status_strings)
     {
-      const auto& status_code_string = std::to_string(static_cast<int>(status));
-      const std::string& expected_status = std::format("{} {}", status_code_string, status_string);
+      const auto& status_code_string =
+        std::to_string(static_cast<int>(status));
+      const std::string& expected_status =
+        std::format("{} {}", status_code_string, status_string);
 
       if (request.substr(offset).starts_with(expected_status))
       {
@@ -109,32 +115,34 @@ namespace pine::http_utils
       }
     }
 
-    return std::make_unexpected(
-      make_error_code(error::parse_error_status));
+    return std::make_unexpected(error(error_code::parse_error_status,
+                                      "The status is not recognized."));
   }
 
-  std::expected<std::string, std::error_code>
+  std::expected<std::string, pine::error>
     try_get_uri(std::string_view request, size_t& offset)
   {
     if (request.at(offset) != '/')
     {
       return std::make_unexpected(
-        make_error_code(error::parse_error_uri));
+        error(error_code::parse_error_uri,
+              "No URI was found in the request."));
     }
 
     size_t start = offset;
     size_t end = request.find(' ', start);
     if (end == std::string::npos)
     {
-      return std::make_unexpected(
-        make_error_code(error::parse_error_uri));
+      return std::make_unexpected(error(
+        error_code::parse_error_uri,
+        "The URI is not formatted correctly."));
     }
 
     offset = end;
     return std::string(request.substr(start, end - start));
   }
 
-  std::expected<http_version, std::error_code>
+  std::expected<http_version, pine::error>
     try_get_version(std::string_view request,
                     size_t& offset)
   {
@@ -147,7 +155,7 @@ namespace pine::http_utils
       }
     }
 
-    return std::make_unexpected(
-      make_error_code(error::parse_error_version));
+    return std::make_unexpected(error(error_code::parse_error_version,
+                                      "The version is not recognized."));
   }
 }
