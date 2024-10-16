@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "coroutine.h"
+#include "error.h"
 #include "snowflake.h"
 
 #ifdef _WIN32
@@ -24,13 +25,13 @@ namespace pine
 
     /// @brief Receive a raw message to the connection.
     /// @return An asynchronous operation that returns the received bytes.
-    async_operation<std::string, std::error_code>
+    async_operation<std::string>
       receive_raw_message() const;
 
     /// @brief Send a raw message to the connection.
     /// @param raw_message Message to send.
     /// @return An asynchronous task completed when the message has been sent.
-    async_operation<void, std::error_code>
+    async_operation<void>
       send_raw_message(std::string_view raw_message) const;
 
     /// @brief Close the connection.

@@ -2,13 +2,13 @@
 #include <expected.h>
 #include <format>
 #include <string>
-#include <system_error>
+#include "error.h"
 #include "http.h"
 #include "http_response.h"
 
 namespace pine
 {
-  std::expected<http_response, std::error_code>
+  std::expected<http_response, pine::error>
     http_response::parse(const std::string& response)
   {
     http_response result{};

@@ -19,7 +19,7 @@ namespace pine
     std::cout << "[Connection] New connection: " << id << std::endl;
   }
 
-  async_operation<std::string, std::error_code>
+  async_operation<std::string>
     connection::receive_raw_message() const
   {
     static constexpr size_t chunk_size = 1024;
@@ -33,14 +33,13 @@ namespace pine
 
       if (bytes_received == 0)
       {
-        co_return std::make_error_code(
-          std::errc::connection_reset);
+        co_return error(error_code::connection_closed);
       }
 
       if (bytes_received == SOCKET_ERROR)
       {
-        co_return std::make_error_code(
-          static_cast<std::errc>(WSAGetLastError()));
+        co_return error(error_code::winsock_error,
+                        std::to_string(WSAGetLastError()));
       }
 
       message.append(buffer.data(), bytes_received);
@@ -52,11 +51,11 @@ namespace pine
     co_return message;
   }
 
-  async_operation<void, std::error_code>
+  async_operation<void>
     connection::send_raw_message(std::string_view raw_message) const
   {
     if (raw_message.empty())
-      co_return pine::make_error_code(pine::error::success);
+      co_return error(error_code::success);
 
     size_t bytes_sent = send(this->socket,
                              raw_message.data(),
@@ -65,17 +64,17 @@ namespace pine
 
     if (bytes_sent == SOCKET_ERROR)
     {
-      co_return std::make_error_code(
-        static_cast<std::errc>(WSAGetLastError()));
+      co_return error(error_code::winsock_error,
+                      std::to_string(WSAGetLastError()));
     }
 
     if (bytes_sent != raw_message.size())
     {
-      co_return std::make_error_code(
-        std::errc::message_size);
+      co_return error(error_code::winsock_error,
+                      "Not all bytes were sent.");
     }
 
-    co_return pine::make_error_code(pine::error::success);
+    co_return error(error_code::success);
   }
 
   void connection::close()

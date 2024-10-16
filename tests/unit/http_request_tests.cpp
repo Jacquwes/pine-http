@@ -76,6 +76,6 @@ TEST(HttpRequestTests, ParseInvalidRequest)
   auto result = pine::http_request::parse(requestStr);
   ASSERT_FALSE(result.has_value());
 
-  std::error_code error = result.error();
-  EXPECT_EQ(pine::make_error_code(pine::error::parse_error_method), error);
+  pine::error error = result.error();
+  EXPECT_EQ(pine::error_code::parse_error_method, error.code());
 }

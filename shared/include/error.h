@@ -14,6 +14,11 @@ namespace pine
     parse_error_body,
     parse_error_status,
     client_not_found,
+    connection_closed,
+  #ifdef _WIN32
+    winsock_error,
+  #endif // _WIN32
+    coroutine_cancelled,
   };
 
   class error

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <error.h>
 #include <string>
 #include <thread>
 #include "connection.h"
@@ -30,16 +31,16 @@ namespace pine
 
     /// @brief Start listening for messages from the server.
     /// @return An asynchronous task completed when the connection has been closed.
-    async_operation<void, std::error_code> listen() const;
+    async_operation<void> listen() const;
 
     /// @brief Receive an HTTP response from the server.
     /// @return An asynchronous task completed when the response has been received.
-    async_operation<http_response, std::error_code> receive_response() const;
+    async_operation<http_response> receive_response() const;
 
     /// @brief Send an HTTP request to the server.
     /// @param request The request to send.
     /// @return An asynchronous task completed when the request has been sent.
-    async_operation<void, std::error_code> send_request(http_request const& request) const;
+    async_operation<void> send_request(http_request const& request) const;
 
   private:
     std::jthread client_thread;
