@@ -33,7 +33,8 @@ namespace pine
 
       if (bytes_received == 0)
       {
-        co_return error(error_code::connection_closed);
+        co_return error(error_code::connection_closed,
+                        "The connection was closed by the remote host.");
       }
 
       if (bytes_received == SOCKET_ERROR)

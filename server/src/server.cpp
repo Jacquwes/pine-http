@@ -15,7 +15,7 @@ namespace pine
     : port(port)
   {}
 
-  std::expected<void, std::error_code> server::start()
+  std::expected<void, error> server::start()
   {
     if (const auto& init_result = initialize_wsa();
         !init_result)
@@ -31,7 +31,8 @@ namespace pine
       return std::make_unexpected(socket_result.error());
     this->server_socket = socket_result.value();
 
-    if (const auto& bind_result = bind_socket(server_socket, this->address_info);
+    if (const auto& bind_result = bind_socket(server_socket,
+                                              this->address_info);
         !bind_result)
       return std::make_unexpected(bind_result.error());
 
@@ -64,7 +65,7 @@ namespace pine
     this->clients.clear();
   }
 
-  std::expected<void, std::error_code> server::accept_clients()
+  std::expected<void, error> server::accept_clients()
   {
     for (const auto& callback : on_ready_callbacks)
     {
@@ -101,7 +102,8 @@ namespace pine
         callback(*this, client);
       }
 
-      if (const auto& start_result = client->start().await_resume(); !start_result)
+      if (const auto& start_result = client->start().await_resume();
+          !start_result)
       {
         this->clients.erase(client->get_id());
       }
@@ -112,7 +114,7 @@ namespace pine
     return {};
   }
 
-  async_operation<void, std::error_code> server::disconnect_client(uint64_t const& client_id)
+  async_operation<void> server::disconnect_client(uint64_t const& client_id)
   {
     std::unique_lock lock{ mutate_clients_mutex };
 
@@ -120,19 +122,21 @@ namespace pine
 
     if (client == clients.end())
     {
-      co_return make_error_code(error::client_not_found);
+      co_return error(error_code::client_not_found,
+                      "The client was not found.");
     }
 
     client->second->close();
 
     clients.erase(client_id);
 
-    co_return make_error_code(error::success);
+    co_return error(error_code::success);
   }
 
   server& server::on_connection_attempt(
     std::function<
-    async_operation<void, std::error_code>(server&, std::shared_ptr<server_connection>const&)
+    async_operation<void>
+    (server&, std::shared_ptr<server_connection>const&)
     > const& callback)
   {
     on_connection_attemps_callbacks.push_back(callback);
@@ -141,7 +145,8 @@ namespace pine
 
   server& server::on_connection_failed(
     std::function<
-    async_operation<void, std::error_code>(server&, std::shared_ptr<server_connection>const&)
+    async_operation<void>
+    (server&, std::shared_ptr<server_connection>const&)
     > const& callback)
   {
     on_connection_failed_callbacks.push_back(callback);
@@ -150,14 +155,18 @@ namespace pine
 
   server& server::on_connection(
     std::function<
-    async_operation<void, std::error_code>(server&, std::shared_ptr<server_connection>const&)
+    async_operation<void>
+    (server&, std::shared_ptr<server_connection>const&)
     > const& callback)
   {
     on_connection_callbacks.push_back(callback);
     return *this;
   }
 
-  server& server::on_ready(std::function<async_operation<void, std::error_code>(server&)> const& callback)
+  server& server::on_ready(
+    std::function<
+    async_operation<void>
+    (server&)> const& callback)
   {
     on_ready_callbacks.push_back(callback);
     return *this;

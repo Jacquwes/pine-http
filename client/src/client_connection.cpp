@@ -64,6 +64,6 @@ namespace pine
     if (!send_result)
       co_return send_result.error();
 
-    co_return {};
+    co_return error(error_code::success);
   }
 }
