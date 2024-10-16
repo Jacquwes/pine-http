@@ -40,7 +40,8 @@ TEST(HttpRequestTests, SettersAndGetters)
   EXPECT_EQ(pine::http_method::post, request.get_method());
   EXPECT_EQ("/api/products", request.get_uri());
   EXPECT_EQ(pine::http_version::http_1_1, request.get_version());
-  EXPECT_EQ(1, request.get_headers().size());
+  // 2 headers: Content-Size is added automatically.
+  EXPECT_EQ(2, request.get_headers().size());
   EXPECT_EQ("application/xml", request.get_header("Content-Type"));
   EXPECT_EQ("<product><name>Widget</name><price>9.99</price></product>", request.get_body());
 }
