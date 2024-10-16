@@ -17,6 +17,7 @@ namespace pine
     connection_closed,
   #ifdef _WIN32
     winsock_error,
+    getaddrinfo_error,
   #endif // _WIN32
     coroutine_cancelled,
   };
