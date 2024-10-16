@@ -1,5 +1,6 @@
 #include <coroutine.h>
 #include <cstdint>
+#include <error.h>
 #include <http_request.h>
 #include <http_response.h>
 #include <string>
@@ -30,7 +31,7 @@ namespace pine
     this->close();
   }
 
-  async_operation<void, std::error_code>
+  async_operation<void>
     client_connection::listen() const
   {
     while (true)
@@ -41,7 +42,7 @@ namespace pine
     }
   }
 
-  async_operation<http_response, std::error_code>
+  async_operation<http_response>
     client_connection::receive_response() const
   {
     const auto& received_message_result = co_await this->receive_raw_message();
@@ -54,7 +55,7 @@ namespace pine
     co_return response;
   }
 
-  async_operation<void, std::error_code>
+  async_operation<void>
     client_connection::send_request(http_request const& request) const
   {
     const auto& request_string = request.to_string();
@@ -63,6 +64,6 @@ namespace pine
     if (!send_result)
       co_return send_result.error();
 
-    co_return {};
+    co_return error(error_code::success);
   }
 }

@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 #include <string_view>
-#include <system_error>
+#include "error.h"
 #include "expected.h"
 #include "http.h"
 
@@ -19,7 +19,7 @@ namespace pine
     /// @brief Parses an HTTP response from a string.
     /// @param response The string representation of the HTTP response.
     /// @return An expected object containing the parsed HTTP response or an error code.
-    static std::expected<http_response, std::error_code>
+    static std::expected<http_response, pine::error>
       parse(const std::string& response);
 
     /// @brief Gets the body of the HTTP response.

@@ -7,6 +7,7 @@
 #include <memory>
 #include <system_error>
 #include <type_traits>
+#include "error.h"
 #include "expected.h"
 #include "thread_pool.h"
 
@@ -14,7 +15,7 @@
 /// @tparam T The type of the value to return.
 /// @tparam E The type of the error to return.
 /// @details For more information see: https://en.cppreference.com/w/cpp/language/coroutines
-template <typename T, typename E>
+template <typename T>
 struct async_operation
 {
   /// @brief The promise type of the coroutine.
@@ -23,8 +24,8 @@ struct async_operation
   struct promise_type
   {
     /// @brief The promise object that holds the result.
-    std::shared_ptr<std::promise<std::expected<T, E>>> promise =
-      std::make_shared<std::promise<std::expected<T, E>>>();
+    std::shared_ptr<std::promise<std::expected<T, pine::error>>> promise =
+      std::make_shared<std::promise<std::expected<T, pine::error>>>();
 
     /// @brief The shared pointer to the canceled flag.
     std::shared_ptr<std::atomic_bool> cancelled =
@@ -32,9 +33,9 @@ struct async_operation
 
     /// @brief Get the return object of the coroutine.
     /// @return The async_operation object.
-    async_operation<T, E> get_return_object() noexcept
+    async_operation<T> get_return_object() noexcept
     {
-      return async_operation<T, E>(
+      return async_operation<T>(
         std::coroutine_handle<promise_type>::from_promise(*this),
         this->cancelled
       );
@@ -53,13 +54,13 @@ struct async_operation
     {
       this->promise->set_value(
         std::make_unexpected(
-        std::make_error_code(
-        std::errc::operation_canceled)));
+          pine::error(
+            pine::error_code::coroutine_cancelled)));
     }
 
     /// @brief Set the return value of the coroutine.
     /// @param result The result of the coroutine.
-    void return_value(std::expected<T, E> result)
+    void return_value(std::expected<T, pine::error> result)
     {
       if (!*cancelled)
         this->promise->set_value(std::move(result));
@@ -71,7 +72,7 @@ struct async_operation
         this->promise->set_value(std::move(result));
     }
 
-    void return_value(E error = 0)
+    void return_value(pine::error error = pine::error(pine::error_code::success))
     {
       if (!*cancelled)
         this->promise->set_value(std::make_unexpected(std::move(error)));
@@ -101,7 +102,7 @@ struct async_operation
 
   /// @brief Get the result of the coroutine.
   /// @return The result of the coroutine.
-  std::expected<T, E> await_resume() const
+  std::expected<T, pine::error> await_resume() const
   {
     return this->get_future().get();
   }
@@ -152,7 +153,7 @@ struct async_operation
     }
   }
 
-  std::future<std::expected<T, E>> get_future() const
+  std::future<std::expected<T, pine::error>> get_future() const
   {
     return this->_coroutine.promise().promise->get_future();
   }
@@ -166,21 +167,21 @@ struct async_operation
 /// @brief An awaitable coroutine that returns void.
 /// @tparam E The type of the error to return.
 /// @details This is a specialization of async_operation for void return type.
-template <typename E>
-struct async_operation<void, E>
+template <>
+struct async_operation<void>
 {
   /// @brief The promise type of the coroutine.
   struct promise_type
   {
-    std::shared_ptr<std::promise<std::expected<void, E>>> promise =
-      std::make_shared<std::promise<std::expected<void, E>>>();
+    std::shared_ptr<std::promise<std::expected<void, pine::error>>> promise =
+      std::make_shared<std::promise<std::expected<void, pine::error>>>();
 
     std::shared_ptr<std::atomic_bool> cancelled =
       std::make_shared<std::atomic_bool>(false);
 
-    async_operation<void, E> get_return_object() noexcept
+    async_operation<void> get_return_object() noexcept
     {
-      return async_operation<void, E>(
+      return async_operation<void>(
         std::coroutine_handle<promise_type>::from_promise(*this),
         this->cancelled
       );
@@ -191,12 +192,12 @@ struct async_operation<void, E>
 
     void unhandled_exception()
     {
-      this->promise->set_value(std::expected<void, E>(
-        std::unexpected(std::make_error_code(std::errc::operation_canceled))
+      this->promise->set_value(std::expected<void, pine::error>(
+        std::unexpected(pine::error(pine::error_code::coroutine_cancelled))
       ));
     }
 
-    void return_value(E error = 0)
+    void return_value(pine::error error = pine::error(pine::error_code::success))
     {
       if (!*cancelled)
         this->promise->set_value(std::make_unexpected(std::move(error)));
@@ -219,7 +220,7 @@ struct async_operation<void, E>
                  });
   }
 
-  std::expected<void, E> await_resume() const
+  std::expected<void, pine::error> await_resume() const
   {
     return this->get_future().get();
   }
@@ -268,7 +269,7 @@ struct async_operation<void, E>
     return *this;
   }
 
-  std::future<std::expected<void, E>> get_future() const
+  std::future<std::expected<void, pine::error>> get_future() const
   {
     return this->_coroutine.promise().promise->get_future();
   }

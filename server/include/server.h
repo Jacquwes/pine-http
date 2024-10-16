@@ -2,6 +2,7 @@
 
 #include <coroutine.h>
 #include <cstdint>
+#include <error.h>
 #include <expected.h>
 #include <functional>
 #include <memory>
@@ -24,7 +25,7 @@ namespace pine
     explicit server(const char* port = "80");
 
     /// @brief Start listening for connections.
-    std::expected<void, std::error_code> start();
+    std::expected<void, pine::error> start();
 
     /// @brief Stop listening for connections.
     void stop();
@@ -33,7 +34,7 @@ namespace pine
     /// @param client_id Id of the client to disconnect.
     /// @return An asynchronous task completed when the client has been
     /// disconnected.
-    async_operation<void, std::error_code> disconnect_client(
+    async_operation<void> disconnect_client(
       uint64_t const& client_id);
 
   private:
@@ -42,7 +43,7 @@ namespace pine
     /// connection for each client.
     /// @return An asynchronous task completed when the server has stopped
     /// listening.
-    std::expected<void, std::error_code> accept_clients();
+    std::expected<void, pine::error> accept_clients();
 
     std::mutex delete_clients_mutex;
     std::mutex mutate_clients_mutex;
@@ -67,7 +68,7 @@ namespace pine
     /// @return A reference to this server.
     server&
       on_connection_attempt(
-      std::function<async_operation<void, std::error_code>(server&,
+      std::function<async_operation<void>(server&,
       std::shared_ptr<server_connection> const&)> const& callback
       );
 
@@ -77,7 +78,7 @@ namespace pine
     /// @return A reference to this server.
     server&
       on_connection_failed(
-      std::function < async_operation<void, std::error_code>(
+      std::function < async_operation<void>(
       server&,
       std::shared_ptr<server_connection> const&)> const& callback
       );
@@ -87,7 +88,7 @@ namespace pine
     /// connects to the server.
     /// @return A reference to this server.
     server&
-      on_connection(std::function < async_operation<void, std::error_code>(
+      on_connection(std::function < async_operation<void>(
       server&,
       std::shared_ptr<server_connection> const&)> const& callback
       );
@@ -97,27 +98,27 @@ namespace pine
     /// to accept connections.
     /// @return A reference to this server.
     server&
-      on_ready(std::function < async_operation<void, std::error_code>(
+      on_ready(std::function < async_operation<void>(
       server&)> const& callback
     );
 
   private:
-    std::vector<std::function<async_operation<void, std::error_code>(
+    std::vector<std::function<async_operation<void>(
       server&,
       std::shared_ptr<server_connection> const&)>
     > on_connection_attemps_callbacks;
 
-    std::vector<std::function<async_operation<void, std::error_code>(
+    std::vector<std::function<async_operation<void>(
       server&,
       std::shared_ptr<server_connection> const&)>
     > on_connection_failed_callbacks;
 
-    std::vector<std::function<async_operation<void, std::error_code>(
+    std::vector<std::function<async_operation<void>(
       server&,
       std::shared_ptr<server_connection> const&)>
     > on_connection_callbacks;
 
-    std::vector < std::function < async_operation<void, std::error_code>(
+    std::vector < std::function < async_operation<void>(
       server&)>
     > on_ready_callbacks;
   };

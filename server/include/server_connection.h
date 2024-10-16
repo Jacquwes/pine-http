@@ -21,16 +21,16 @@ namespace pine
 
     /// @brief Receive an HTTP request.
     /// @return An asynchronous task completed when the request has been received.
-    async_operation<http_request, std::error_code> receive_request() const;
+    async_operation<http_request> receive_request() const;
 
     /// @brief Send an HTTP response.
     /// @param response The response to send.
     /// @return An asynchronous task completed when the response has been sent.
-    async_operation<void, std::error_code> send_response(http_response const& response) const;
+    async_operation<void> send_response(http_response const& response) const;
 
     /// @brief Start listening for messages from the client.
     /// @return An asynchronous task completed when the connection has been closed.
-    async_operation<void, std::error_code> start();
+    async_operation<void> start();
 
   private:
     /// @brief Whether the connection is connected.

@@ -3,9 +3,9 @@
 #include <unordered_map>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <type_traits>
 #include <utility>
+#include "error.h"
 #include "expected.h"
 #include "http.h"
 
@@ -35,7 +35,7 @@ namespace pine
     /// @param request The string representation of the request.
     /// @return An expected object containing the parsed HTTP request or an
     /// error code.
-    static std::expected<http_request, std::error_code>
+    static std::expected<http_request, pine::error>
       parse(const std::string& request);
 
     /// @brief Gets the body of the HTTP request.

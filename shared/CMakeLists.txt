@@ -19,6 +19,7 @@ target_sources(shared
     "include/wsa.h"
 
     "src/connection.cpp"
+    "src/error.cpp"
     "src/http.cpp"
     "src/http_request.cpp"
     "src/http_response.cpp"

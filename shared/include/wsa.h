@@ -9,7 +9,7 @@ using SOCKET = unsigned long long;
 namespace pine
 {
   /// @brief Initialize the Windows Socket API.
-  std::expected<void, std::error_code> initialize_wsa();
+  std::expected<void, pine::error> initialize_wsa();
 
   /// @brief Cleanup the Windows Socket API.
   void cleanup_wsa();
@@ -19,26 +19,26 @@ namespace pine
   /// @param service The service name or port number.
   /// @return A pointer to the addrinfo structure containing the address
   /// information.
-  std::expected<addrinfo*, std::error_code>
+  std::expected<addrinfo*, pine::error>
     get_address_info(const char* node,
                      const char* service);
 
   /// @brief Create a socket with the specified address information.
   /// @param address_info The address information for the socket.
   /// @return The created socket.
-  std::expected<SOCKET, std::error_code>
+  std::expected<SOCKET, pine::error>
     create_socket(const addrinfo* address_info);
 
   /// @brief Bind the socket to the specified address.
   /// @param socket The socket to bind.
   /// @param address_info The address information for the socket.
-  std::expected<void, std::error_code>
+  std::expected<void, pine::error>
     bind_socket(SOCKET socket, const addrinfo* address_info);
 
   /// @brief Listen for incoming connections on the socket.
   /// @param socket The socket to listen on.
   /// @param backlog The maximum length of the queue of pending connections.
-  std::expected<void, std::error_code>
+  std::expected<void, pine::error>
     listen_socket(SOCKET socket, int backlog);
 
   /// @brief Accept an incoming connection on the socket.
@@ -46,14 +46,14 @@ namespace pine
   /// @param address_info The address information for the socket.
   /// @param ec An error code to be set if an error occurs.
   /// @return The accepted socket.
-  std::expected<SOCKET, std::error_code>
+  std::expected<SOCKET, pine::error>
     accept_socket(SOCKET socket, const addrinfo* address_info);
 
   /// @brief Connect the socket to the specified address.
   /// @param socket The socket to connect.
   /// @param address_info The address information for the socket.
   /// @param ec An error code to be set if an error occurs.
-  std::expected<void, std::system_error>
+  std::expected<void, pine::error>
     connect_socket(SOCKET socket, const addrinfo* address_info);
 
   /// @brief Close the socket.

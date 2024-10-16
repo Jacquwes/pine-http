@@ -1,7 +1,7 @@
 #include <cstring>
 #include <map>
 #include <string>
-#include <system_error>
+#include "error.h"
 #include "expected.h"
 #include "http.h"
 #include "http_request.h"
@@ -16,7 +16,7 @@ namespace pine
     : method(method), uri(uri), version(version), headers(headers), body(body)
   {}
 
-  std::expected<http_request, std::error_code>
+  std::expected<http_request, pine::error>
     http_request::parse(const std::string& request)
   {
     http_request result;

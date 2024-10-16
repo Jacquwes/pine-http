@@ -13,7 +13,7 @@ namespace pine
   server_connection::server_connection(SOCKET socket) : connection(socket)
   {}
 
-  async_operation<http_request, std::error_code>
+  async_operation<http_request>
     pine::server_connection::receive_request() const
   {
     const auto& receive_message_result = co_await this->receive_raw_message();
@@ -29,7 +29,7 @@ namespace pine
     co_return request_result.value();
   }
 
-  async_operation<void, std::error_code>
+  async_operation<void>
     server_connection::send_response(http_response const& response) const
   {
     const std::string& response_string = response.to_string();
@@ -39,10 +39,10 @@ namespace pine
     if (!send_message_result)
       co_return send_message_result.error();
 
-    co_return make_error_code(error::success);
+    co_return error(error_code::success);
   }
 
-  async_operation<void, std::error_code>
+  async_operation<void>
     server_connection::start()
   {
     this->is_connected = true;
@@ -58,6 +58,6 @@ namespace pine
     }
 
     this->is_connected = false;
-    co_return make_error_code(error::success);
+    co_return error(error_code::success);
   }
 }

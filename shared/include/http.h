@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 #include <string_view>
-#include <system_error>
+#include "error.h"
 #include "expected.h"
 
 namespace pine
@@ -63,49 +63,49 @@ namespace pine
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the body starts.
     /// @return The extracted body as a string.
-    std::expected<std::string, std::error_code>
+    std::expected<std::string, pine::error>
       try_get_body(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract the headers from an HTTP request.
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the headers start.
     /// @return The extracted headers as a map of key-value pairs.
-    std::expected<std::map<std::string, std::string>, std::error_code>
+    std::expected<std::map<std::string, std::string>, pine::error>
       try_get_headers(const std::string& request, size_t& offset);
 
     /// @brief Tries to extract a single header from an HTTP request.
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the header starts.
     /// @return The extracted header as a pair of key and value.
-    std::expected<std::pair<std::string, std::string>, std::error_code>
+    std::expected<std::pair<std::string, std::string>, pine::error>
       try_get_header(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract the HTTP method from an HTTP request.
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the method starts.
     /// @return The extracted HTTP method.
-    std::expected<http_method, std::error_code>
+    std::expected<http_method, pine::error>
       try_get_method(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract the HTTP status from an HTTP response.
     /// @param response The HTTP response.
     /// @param offset The offset in the response where the status starts.
     /// @return The extracted HTTP status.
-    std::expected<http_status, std::error_code>
+    std::expected<http_status, pine::error>
       try_get_status(std::string_view response, size_t& offset);
 
     /// @brief Tries to extract the URI from an HTTP request.
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the URI starts.
     /// @return The extracted URI as a string.
-    std::expected<std::string, std::error_code>
+    std::expected<std::string, pine::error>
       try_get_uri(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract the HTTP version from an HTTP request.
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the version starts.
     /// @return The extracted HTTP version.
-    std::expected<http_version, std::error_code>
+    std::expected<http_version, pine::error>
       try_get_version(std::string_view request, size_t& offset);
   }
 }
