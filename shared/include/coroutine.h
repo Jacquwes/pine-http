@@ -81,7 +81,7 @@ struct async_operation
 
   /// @brief Check if the awaitable is ready to resume.
   /// @return True if the awaitable is ready, false otherwise.
-  bool await_ready() const
+  bool await_ready()
   {
     auto future_status = this->get_future().wait_for(std::chrono::seconds(0));
     bool is_ready = future_status == std::future_status::ready;
@@ -102,13 +102,15 @@ struct async_operation
 
   /// @brief Get the result of the coroutine.
   /// @return The result of the coroutine.
-  std::expected<T, pine::error> await_resume() const
+  std::expected<T, pine::error> await_resume()
   {
     return this->get_future().get();
   }
 
   std::coroutine_handle<promise_type> _coroutine = nullptr;
   std::shared_ptr<std::atomic_bool> cancelled = nullptr;
+  bool retrieved_future = false;
+  std::future<std::expected<T, pine::error>> future;
 
   async_operation() = default;
 
@@ -145,9 +147,15 @@ struct async_operation
     }
   }
 
-  std::future<std::expected<T, pine::error>> get_future() const
+  std::future<std::expected<T, pine::error>>& get_future()
   {
-    return this->_coroutine.promise().promise->get_future();
+    if (!retrieved_future)
+    {
+      this->retrieved_future = true;
+      this->future = this->_coroutine.promise().promise->get_future();
+    }
+
+    return this->future;
   }
 
   void cancel()
@@ -196,7 +204,7 @@ struct async_operation<void>
     }
   };
 
-  bool await_ready() const
+  bool await_ready()
   {
     auto future_status = this->get_future().wait_for(std::chrono::seconds(0));
     return future_status == std::future_status::ready;
@@ -212,13 +220,15 @@ struct async_operation<void>
                  });
   }
 
-  std::expected<void, pine::error> await_resume() const
+  std::expected<void, pine::error> await_resume()
   {
     return this->get_future().get();
   }
 
   std::coroutine_handle<promise_type> _coroutine = nullptr;
   std::shared_ptr<std::atomic_bool> cancelled = nullptr;
+  bool retrieved_future = false;
+  std::future<std::expected<void, pine::error>> future;
 
   async_operation() = default;
 
@@ -253,9 +263,15 @@ struct async_operation<void>
     return *this;
   }
 
-  std::future<std::expected<void, pine::error>> get_future() const
+  std::future<std::expected<void, pine::error>>& get_future()
   {
-    return this->_coroutine.promise().promise->get_future();
+    if (!retrieved_future)
+    {
+      this->retrieved_future = true;
+      this->future = this->_coroutine.promise().promise->get_future();
+    }
+
+    return this->future;
   }
 
   void cancel()
