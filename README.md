@@ -1,28 +1,31 @@
 # Pine
 
-[![CMake on multiple platforms](https://github.com/Jacquwes/Pine/actions/workflows/cmake.yml/badge.svg?branch=asio)](https://github.com/Jacquwes/Pine/actions/workflows/cmake.yml)
+[![CTest on Windows](https://github.com/Jacquwes/Pine/actions/workflows/cmake.yml/badge.svg?branch=asio)](https://github.com/Jacquwes/Pine/actions/workflows/cmake.yml)
 
-Pine is a modern and lightweight C++20 library for building chat applications.
+Pine is a modern and lightweight C++20 library for building HTTP servers.
 
-It uses its own protocol, which is based on TCP using asio. Therefore, it is 
-not suitable for use on the web.
+It is multi-threaded and uses asynchronous I/O with coroutines. It is designed 
+to be simple to use and easy to integrate into existing 
+projects.
 
-It is multi-threaded and uses asynchronous I/O, and is designed to be
-easily extensible.
+The project is still in its early stages and is not yet ready for production 
+use. Only Windows is supported at the moment, but Linux support is planned.
+
+No external dependencies are required, except for the standard library and 
+Google Test for testing.
+
+## Features
+
+- Asynchronous I/O with coroutines
+- Multi-threaded
+- HTTP/1.1
 
 ## Building
 
-_Build will not work if using clang_
-
-It is recommended to use [vcpkg](https://github.com/microsoft/vcpkg) to install
-dependencies. Pine uses CMake as its build system. To build Pine, run the
-following commands:
-
-Dependencies:
+Dependencies: `gtest`
 
 ```bash
-vcpkg install asio:x64-windows gtest:x64-windows
-vcpkg install asio:x64-linux gtest:x64-linux
+vcpkg install
 ```
 
 ```bash
