@@ -119,15 +119,7 @@ struct async_operation
                            std::shared_ptr<std::atomic_bool> cancelled)
     : _coroutine(coroutine)
     , cancelled(cancelled)
-  {
-    static pine::thread_pool& pool = pine::thread_pool::get_instance();
-    pool.enqueue([this]
-                 {
-                   if (!*this->cancelled)
-                     this->_coroutine.resume();
-                   this->_coroutine.destroy();
-                 });
-  }
+  {}
 
   async_operation(async_operation const&) = delete;
 
@@ -234,15 +226,7 @@ struct async_operation<void>
                            std::shared_ptr<std::atomic_bool> cancelled)
     : _coroutine(coroutine)
     , cancelled(cancelled)
-  {
-    static pine::thread_pool& pool = pine::thread_pool::get_instance();
-    pool.enqueue([this]
-                 {
-                   if (!*this->cancelled)
-                     this->_coroutine.resume();
-                   this->_coroutine.destroy();
-                 });
-  }
+  {}
 
   async_operation(async_operation const&) = delete;
 
