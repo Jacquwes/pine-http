@@ -7,13 +7,6 @@ on:
     - '**.md'
     - '**doxygen.yml'
     - '**doxyfile'
-  pull_request:
-    branches: [ "master" ]
-    paths:
-    - '**.h'
-    - '**.md'
-    - '**doxygen.yml'
-    - '**doxyfile'
 
 name: Build doxygen documentation
 jobs:
