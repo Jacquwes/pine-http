@@ -52,8 +52,6 @@ namespace pine
   {
     this->is_connected = true;
 
-    while (is_connected)
-    {
       const auto& request_result = co_await this->receive_request();
       if (!request_result)
       {
@@ -66,14 +64,16 @@ namespace pine
 
       const std::shared_ptr<server_route>& route = this->server.get_route(path);
       http_response response;
+    response.set_header("Connection", "close");
+
       if (!route)
         response.set_status(http_status::not_found);
       else
         route->handler()(request, response);
 
       co_await this->send_response(response);
-    }
 
+    this->close();
     this->is_connected = false;
 
     co_return{};
