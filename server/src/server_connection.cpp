@@ -75,11 +75,13 @@ namespace pine
       else
         route->handler()(request, response);
 
-      co_await this->send_response(response);
+    const auto& response_result = co_await this->send_response(response);
 
     this->close();
     this->is_connected = false;
 
+    if (!response_result)
+      co_return response_result.error();
     co_return{};
   }
 }
