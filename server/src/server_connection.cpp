@@ -6,11 +6,14 @@
 #include <system_error>
 #include <WinSock2.h>
 #include <error.h>
+#include "server.h"
 #include "server_connection.h"
 
 namespace pine
 {
-  server_connection::server_connection(SOCKET socket) : connection(socket)
+  server_connection::server_connection(SOCKET socket, pine::server& server)
+    : connection(socket)
+    , server(server)
   {}
 
   async_operation<http_request>

@@ -90,7 +90,7 @@ namespace pine
       }
 
       const auto& client_socket = accept_socket_result.value();
-      const auto& client = std::make_shared<server_connection>(client_socket);
+      const auto& client = std::make_shared<server_connection>(client_socket, *this);
 
       for (const auto& callback : this->on_connection_attemps_callbacks)
       {

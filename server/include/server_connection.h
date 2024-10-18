@@ -13,11 +13,13 @@ namespace pine
   class server;
 
   /// @brief A connection to a client.
-  class server_connection : public connection, public std::enable_shared_from_this<server_connection>
+  class server_connection
+    : public connection
+    , public std::enable_shared_from_this<server_connection>
   {
   public:
     /// @brief Construct a server connection with the given socket and server.
-    explicit server_connection(SOCKET socket);
+    explicit server_connection(SOCKET socket, pine::server& server);
 
     /// @brief Receive an HTTP request.
     /// @return An asynchronous task completed when the request has been received.
@@ -35,5 +37,8 @@ namespace pine
   private:
     /// @brief Whether the connection is connected.
     bool is_connected = true;
+
+    /// @brief The server that the connection is connected to.
+    server& server;
   };
 }
