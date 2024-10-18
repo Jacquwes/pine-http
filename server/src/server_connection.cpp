@@ -67,7 +67,11 @@ namespace pine
     response.set_header("Connection", "close");
 
       if (!route)
+    {
+      response.set_header("Content-Type", "text/plain");
         response.set_status(http_status::not_found);
+      response.set_body("404 Not Found");
+    }
       else
         route->handler()(request, response);
 
