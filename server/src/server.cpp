@@ -134,7 +134,7 @@ namespace pine
 
     clients.erase(client_id);
 
-    co_return error(error_code::success);
+    co_return{};
   }
 
   server_route& server::add_route(std::string&& path,

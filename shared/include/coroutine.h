@@ -197,6 +197,12 @@ struct async_operation<void>
       ));
     }
 
+    void return_value(std::expected<void, pine::error> result = {})
+    {
+      if (!*cancelled)
+        this->promise->set_value(std::move(result));
+    }
+
     void return_value(pine::error error = pine::error(pine::error_code::success))
     {
       if (!*cancelled)

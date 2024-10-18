@@ -56,7 +56,7 @@ namespace pine
     connection::send_raw_message(std::string_view raw_message) const
   {
     if (raw_message.empty())
-      co_return error(error_code::success);
+      co_return{};
 
     size_t bytes_sent = send(this->socket,
                              raw_message.data(),
@@ -75,7 +75,7 @@ namespace pine
                       "Not all bytes were sent.");
     }
 
-    co_return error(error_code::success);
+    co_return{};
   }
 
   void connection::close()

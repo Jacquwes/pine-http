@@ -44,7 +44,7 @@ namespace pine
     if (!send_message_result)
       co_return send_message_result.error();
 
-    co_return error(error_code::success);
+    co_return{};
   }
 
   async_operation<void>
@@ -75,6 +75,7 @@ namespace pine
     }
 
     this->is_connected = false;
-    co_return error(error_code::success);
+
+    co_return{};
   }
 }
