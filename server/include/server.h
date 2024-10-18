@@ -1,18 +1,21 @@
 #pragma once
 
+#include <WinSock2.h>
 #include <coroutine.h>
 #include <cstdint>
 #include <error.h>
 #include <expected.h>
 #include <functional>
+#include <http_request.h>
+#include <http_response.h>
 #include <memory>
 #include <mutex>
-#include <system_error>
+#include <server_route.h>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <WinSock2.h>
-#include "server_route.h"
+#include <ws2def.h>
 
 namespace pine
 {
@@ -47,6 +50,8 @@ namespace pine
     server_route& add_route(std::string&& path,
                             std::function<void(const http_request&,
                                                http_response&)>&& handler);
+
+    const std::shared_ptr<server_route> get_route(const std::string& path) const;
 
   private:
     /// @brief Accept clients.

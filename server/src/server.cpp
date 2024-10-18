@@ -10,8 +10,8 @@
 #include <string>
 #include <type_traits>
 #include <wsa.h>
-#include "server.h"
-#include "server_connection.h"
+#include <server.h>
+#include <server_connection.h>
 
 namespace pine
 {
@@ -145,6 +145,16 @@ namespace pine
                                                 std::move(handler));
     this->routes.push_back(route);
     return *route;
+  }
+
+  const std::shared_ptr<server_route> server::get_route(const std::string& path) const
+  {
+    for (const auto& route : this->routes)
+    {
+      if (route->path() == path)
+        return route;
+    }
+    return nullptr;
   }
 
   server& server::on_connection_attempt(
