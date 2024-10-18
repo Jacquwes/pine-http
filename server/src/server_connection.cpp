@@ -1,13 +1,15 @@
+#include <WinSock2.h>
 #include <connection.h>
 #include <coroutine.h>
+#include <error.h>
+#include <http.h>
 #include <http_request.h>
 #include <http_response.h>
+#include <memory>
+#include <server.h>
+#include <server_connection.h>
+#include <server_route.h>
 #include <string>
-#include <system_error>
-#include <WinSock2.h>
-#include <error.h>
-#include "server.h"
-#include "server_connection.h"
 
 namespace pine
 {
@@ -58,6 +60,18 @@ namespace pine
         this->is_connected = false;
         co_return request_result.error();
       }
+
+      const auto& request = request_result.value();
+      const std::string& path = request.get_uri();
+
+      const std::shared_ptr<server_route>& route = this->server.get_route(path);
+      http_response response;
+      if (!route)
+        response.set_status(http_status::not_found);
+      else
+        route->handler()(request, response);
+
+      co_await this->send_response(response);
     }
 
     this->is_connected = false;
