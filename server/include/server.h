@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 #include <WinSock2.h>
+#include "server_route.h"
 
 namespace pine
 {
@@ -37,6 +38,16 @@ namespace pine
     async_operation<void> disconnect_client(
       uint64_t const& client_id);
 
+    /// @brief Add a route to the server.
+    /// @param path The HTTP path to match in order to call the handler.
+    /// @param handler The function to call when the route is requested.
+    /// The second parameter of the handler represents the response to send
+    /// to the client.
+    /// @return A reference to the created route.
+    server_route& add_route(std::string&& path,
+                            std::function<void(const http_request&,
+                                               http_response&)>&& handler);
+
   private:
     /// @brief Accept clients.
     /// This function waits for clients to connect and creates a server
@@ -49,6 +60,7 @@ namespace pine
     std::mutex mutate_clients_mutex;
 
     std::unordered_map<uint64_t, std::shared_ptr<server_connection>> clients;
+    std::vector<std::shared_ptr<server_route>> routes;
 
     const char* port;
   #ifdef _WIN32
@@ -68,8 +80,8 @@ namespace pine
     /// @return A reference to this server.
     server&
       on_connection_attempt(
-      std::function<async_operation<void>(server&,
-      std::shared_ptr<server_connection> const&)> const& callback
+        std::function<async_operation<void>(server&,
+                                            std::shared_ptr<server_connection> const&)> const& callback
       );
 
     /// @brief Call this function to add a callback that will be executed when
@@ -78,9 +90,9 @@ namespace pine
     /// @return A reference to this server.
     server&
       on_connection_failed(
-      std::function < async_operation<void>(
-      server&,
-      std::shared_ptr<server_connection> const&)> const& callback
+        std::function < async_operation<void>(
+          server&,
+          std::shared_ptr<server_connection> const&)> const& callback
       );
 
     /// @brief Call this function to add a callback that will be executed when
@@ -89,8 +101,8 @@ namespace pine
     /// @return A reference to this server.
     server&
       on_connection(std::function < async_operation<void>(
-      server&,
-      std::shared_ptr<server_connection> const&)> const& callback
+        server&,
+        std::shared_ptr<server_connection> const&)> const& callback
       );
 
     /// @brief Call this function to add a callback that will be executed when
@@ -99,8 +111,8 @@ namespace pine
     /// @return A reference to this server.
     server&
       on_ready(std::function < async_operation<void>(
-      server&)> const& callback
-    );
+        server&)> const& callback
+      );
 
   private:
     std::vector<std::function<async_operation<void>(

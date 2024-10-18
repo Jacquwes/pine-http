@@ -3,8 +3,12 @@
 #include <error.h>
 #include <expected.h>
 #include <functional>
+#include <http_request.h>
+#include <http_response.h>
 #include <memory>
-#include <system_error>
+#include <server_route.h>
+#include <string>
+#include <type_traits>
 #include <wsa.h>
 #include "server.h"
 #include "server_connection.h"
@@ -131,6 +135,16 @@ namespace pine
     clients.erase(client_id);
 
     co_return error(error_code::success);
+  }
+
+  server_route& server::add_route(std::string&& path,
+                                  std::function<void(const http_request&,
+                                                     http_response&)>&& handler)
+  {
+    auto route = std::make_shared<server_route>(std::move(path),
+                                                std::move(handler));
+    this->routes.push_back(route);
+    return *route;
   }
 
   server& server::on_connection_attempt(
