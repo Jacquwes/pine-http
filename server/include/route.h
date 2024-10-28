@@ -35,6 +35,11 @@ namespace pine
       return handler_;
     }
 
+    bool matches(const std::string& path) const override
+    {
+      return path_ == path;
+    }
+
     inline route& set_handler(std::function<void(const http_request&,
                                                  http_response&)>&&
                               handler)

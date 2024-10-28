@@ -152,7 +152,7 @@ namespace pine
   {
     for (const auto& route : this->routes)
     {
-      if (route->path() == path)
+      if (route->matches(path))
         return route;
     }
     return nullptr;
