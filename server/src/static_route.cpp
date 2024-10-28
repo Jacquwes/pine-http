@@ -15,6 +15,21 @@ static std::string read_file(const std::filesystem::path& location)
                      std::istreambuf_iterator<char>());
 }
 
+// Get the file path from the request URI
+static std::filesystem::path get_file_path(const std::string& request_path,
+                                           const std::string& requested_uri,
+                                           const std::filesystem::path& location)
+{
+  std::string file_path = requested_uri.substr(request_path.size());
+  if (file_path.size() == 0)
+    return "index.html";
+
+  if (file_path.starts_with('/'))
+    file_path = file_path.erase(0, 1);
+
+  return location / file_path;
+}
+
 namespace pine
 {
   void static_route::execute(const http_request& request, http_response& response)
@@ -33,18 +48,9 @@ namespace pine
       return;
     }
 
-    std::string file_path = request.get_uri().substr(path_.size());
-    if (file_path.size() == 0)
-    {
-      file_path += "index.html";
-    }
-
-    if (file_path.starts_with('/'))
-    {
-      file_path = file_path.erase(0, 1);
-    }
-
-    std::filesystem::path file_location = location_ / file_path;
+    std::filesystem::path file_location = get_file_path(path_,
+                                                        request.get_uri(),
+                                                        location_);
     if (!std::filesystem::exists(file_location))
     {
       response.set_status(http_status::not_found);
