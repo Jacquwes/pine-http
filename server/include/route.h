@@ -7,18 +7,18 @@
 
 namespace pine
 {
-  class server_route
+  class route
   {
   public:
-    server_route() = default;
-    server_route(std::string&& path,
+    route() = default;
+    route(std::string&& path,
                  std::function<void(const http_request&,
                                     http_response&)>&&
                  handler);
-    ~server_route() = default;
+    ~route() = default;
 
     constexpr const std::string& path() const { return path_; }
-    constexpr server_route& set_path(std::string&& path)
+    constexpr route& set_path(std::string&& path)
     {
       path_ = std::move(path);
       return *this;
@@ -30,7 +30,7 @@ namespace pine
       return handler_;
     }
 
-    inline server_route& set_handler(std::function<void(const http_request&,
+    inline route& set_handler(std::function<void(const http_request&,
                                                         http_response&)>&&
                                      handler)
     {

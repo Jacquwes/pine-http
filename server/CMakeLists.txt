@@ -9,12 +9,12 @@ target_sources(server
   PRIVATE
     "src/server.cpp"
     "src/server_connection.cpp"
-    "src/server_route.cpp" 
+    "src/route.cpp" 
 
   PUBLIC
     "include/server.h"
     "include/server_connection.h"
-    "include/server_route.h")
+    "include/route.h")
 
 target_include_directories(server PUBLIC include)
 

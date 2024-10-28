@@ -6,7 +6,7 @@
 #include <http_request.h>
 #include <http_response.h>
 #include <memory>
-#include <server_route.h>
+#include <route.h>
 #include <string>
 #include <type_traits>
 #include <wsa.h>
@@ -137,17 +137,17 @@ namespace pine
     co_return{};
   }
 
-  server_route& server::add_route(std::string&& path,
+  route& server::add_route(std::string&& path,
                                   std::function<void(const http_request&,
                                                      http_response&)>&& handler)
   {
-    auto route = std::make_shared<server_route>(std::move(path),
+    auto new_route = std::make_shared<route>(std::move(path),
                                                 std::move(handler));
-    this->routes.push_back(route);
-    return *route;
+    this->routes.push_back(new_route);
+    return *new_route;
   }
 
-  const std::shared_ptr<server_route> server::get_route(const std::string& path) const
+  const std::shared_ptr<route> server::get_route(const std::string& path) const
   {
     for (const auto& route : this->routes)
     {

@@ -8,7 +8,7 @@
 #include <memory>
 #include <server.h>
 #include <server_connection.h>
-#include <server_route.h>
+#include <route.h>
 #include <string>
 
 namespace pine
@@ -62,7 +62,7 @@ namespace pine
       const auto& request = request_result.value();
       const std::string& path = request.get_uri();
 
-      const std::shared_ptr<server_route>& route = this->server.get_route(path);
+      const std::shared_ptr<route>& route = this->server.get_route(path);
       http_response response;
     response.set_header("Connection", "close");
 
