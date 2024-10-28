@@ -12,11 +12,13 @@
 #include <mutex>
 #include <route_base.h>
 #include <route.h>
+#include <static_route.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 #include <ws2def.h>
+#include <filesystem>
 
 namespace pine
 {
@@ -51,6 +53,9 @@ namespace pine
     route& add_route(std::string&& path,
                             std::function<void(const http_request&,
                                                http_response&)>&& handler);
+
+    static_route& add_static_route(std::string&& path,
+                            std::filesystem::path&& location);
 
     const std::shared_ptr<route_base> get_route(const std::string& path) const;
 

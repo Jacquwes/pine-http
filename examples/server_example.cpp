@@ -1,5 +1,6 @@
 // Purpose: Source file for server example.
 
+#include <filesystem>
 #include <iostream>
 
 #include <server.h>
@@ -16,6 +17,9 @@ int main()
                      response.set_status(pine::http_status::ok);
                      response.set_body("Hello, world!");
                    });
+
+  server.add_static_route("/public_directory", std::filesystem::current_path() / "public");
+  server.add_static_route("/public_file", std::filesystem::current_path() / "public" / "about.html");
 
   if (auto server_result = server.start(); !server_result)
   {

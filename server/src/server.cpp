@@ -1,3 +1,4 @@
+#include "server.h"
 #include <coroutine.h>
 #include <cstdint>
 #include <error.h>
@@ -10,6 +11,7 @@
 #include <route_base.h>
 #include <server.h>
 #include <server_connection.h>
+#include <static_route.h>
 #include <string>
 #include <type_traits>
 #include <wsa.h>
@@ -144,6 +146,14 @@ namespace pine
   {
     auto new_route = std::make_shared<route>(std::move(path),
                                                 std::move(handler));
+    this->routes.push_back(new_route);
+    return *new_route;
+  }
+
+  static_route& server::add_static_route(std::string&& path, std::filesystem::path&& location)
+  {
+    auto new_route = std::make_shared<static_route>(std::move(path),
+                                                    std::move(location));
     this->routes.push_back(new_route);
     return *new_route;
   }
