@@ -14,4 +14,10 @@ namespace pine
     : path_(std::move(path))
     , handler_(std::move(handler))
   {}
+
+  void route::execute(const http_request& request,
+                      http_response& response)
+  {
+    handler_(request, response);
+  }
 }

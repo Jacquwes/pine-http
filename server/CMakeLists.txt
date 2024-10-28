@@ -14,7 +14,9 @@ target_sources(server
   PUBLIC
     "include/server.h"
     "include/server_connection.h"
-    "include/route.h")
+    "include/route.h" 
+    "include/route_base.h"
+)
 
 target_include_directories(server PUBLIC include)
 

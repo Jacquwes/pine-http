@@ -10,6 +10,7 @@
 #include <http_response.h>
 #include <memory>
 #include <mutex>
+#include <route_base.h>
 #include <route.h>
 #include <string>
 #include <thread>
@@ -51,7 +52,7 @@ namespace pine
                             std::function<void(const http_request&,
                                                http_response&)>&& handler);
 
-    const std::shared_ptr<route> get_route(const std::string& path) const;
+    const std::shared_ptr<route_base> get_route(const std::string& path) const;
 
   private:
     /// @brief Accept clients.
@@ -65,7 +66,7 @@ namespace pine
     std::mutex mutate_clients_mutex;
 
     std::unordered_map<uint64_t, std::shared_ptr<server_connection>> clients;
-    std::vector<std::shared_ptr<route>> routes;
+    std::vector<std::shared_ptr<route_base>> routes;
 
     const char* port;
   #ifdef _WIN32

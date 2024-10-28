@@ -7,11 +7,12 @@
 #include <http_response.h>
 #include <memory>
 #include <route.h>
+#include <route_base.h>
+#include <server.h>
+#include <server_connection.h>
 #include <string>
 #include <type_traits>
 #include <wsa.h>
-#include <server.h>
-#include <server_connection.h>
 
 namespace pine
 {
@@ -147,7 +148,7 @@ namespace pine
     return *new_route;
   }
 
-  const std::shared_ptr<route> server::get_route(const std::string& path) const
+  const std::shared_ptr<route_base> server::get_route(const std::string& path) const
   {
     for (const auto& route : this->routes)
     {
