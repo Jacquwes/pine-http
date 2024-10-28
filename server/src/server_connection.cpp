@@ -52,28 +52,28 @@ namespace pine
   {
     this->is_connected = true;
 
-      const auto& request_result = co_await this->receive_request();
-      if (!request_result)
-      {
-        this->is_connected = false;
-        co_return request_result.error();
-      }
+    const auto& request_result = co_await this->receive_request();
+    if (!request_result)
+    {
+      this->is_connected = false;
+      co_return request_result.error();
+    }
 
-      const auto& request = request_result.value();
-      const std::string& path = request.get_uri();
+    const auto& request = request_result.value();
+    const std::string& path = request.get_uri();
 
-      const std::shared_ptr<route>& route = this->server.get_route(path);
-      http_response response;
+    const std::shared_ptr<route_base>& route = this->server.get_route(path);
+    http_response response;
     response.set_header("Connection", "close");
 
-      if (!route)
+    if (!route)
     {
       response.set_header("Content-Type", "text/plain");
-        response.set_status(http_status::not_found);
+      response.set_status(http_status::not_found);
       response.set_body("404 Not Found");
     }
-      else
-        route->handler()(request, response);
+    else
+      route->execute(request, response);
 
     const auto& response_result = co_await this->send_response(response);
 
