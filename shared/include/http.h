@@ -40,6 +40,7 @@ namespace pine
     { http_status::ok, "OK" },
     { http_status::bad_request, "Bad Request" },
     { http_status::not_found, "Not Found" },
+    { http_status::method_not_allowed, "Method Not Allowed" },
     { http_status::internal_server_error, "Internal Server Error" },
   };
 
