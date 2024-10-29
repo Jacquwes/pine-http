@@ -19,13 +19,6 @@ namespace pine
           handler);
     ~route() = default;
 
-    constexpr const std::string& path() const { return path_; }
-    constexpr route& set_path(std::string&& path)
-    {
-      path_ = std::move(path);
-      return *this;
-    }
-
     void execute(const http_request& request,
                  http_response& response) override;
 
@@ -49,7 +42,6 @@ namespace pine
     }
 
   private:
-    std::string path_;
     std::function<void(const http_request&, http_response&)> handler_;
   };
 }
