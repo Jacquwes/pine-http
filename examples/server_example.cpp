@@ -16,7 +16,18 @@ int main()
                    {
                      response.set_status(pine::http_status::ok);
                      response.set_body("Hello, world!");
+                   })
+    .set_methods({ pine::http_method::get, pine::http_method::head });
+
+  server.add_route("/",
+                   pine::http_method::post,
+                   [](const pine::http_request& request,
+                      pine::http_response& response)
+                   {
+                     response.set_status(pine::http_status::ok);
+                     response.set_body("Hello, post!");
                    });
+
 
   server.add_static_route("/public_directory", std::filesystem::current_path() / "public");
   server.add_static_route("/public_file", std::filesystem::current_path() / "public" / "about.html");

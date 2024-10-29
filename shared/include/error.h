@@ -13,6 +13,8 @@ namespace pine
     parse_error_headers,
     parse_error_body,
     parse_error_status,
+    route_not_found,
+    method_not_allowed,
     client_not_found,
     connection_closed,
   #ifdef _WIN32

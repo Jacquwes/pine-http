@@ -1,9 +1,10 @@
-#include "server.h"
 #include <coroutine.h>
 #include <cstdint>
 #include <error.h>
 #include <expected.h>
+#include <filesystem>
 #include <functional>
+#include <http.h>
 #include <http_request.h>
 #include <http_response.h>
 #include <memory>
@@ -14,6 +15,7 @@
 #include <static_route.h>
 #include <string>
 #include <type_traits>
+#include <vector>
 #include <wsa.h>
 
 namespace pine
@@ -141,11 +143,38 @@ namespace pine
   }
 
   route& server::add_route(std::string&& path,
-                                  std::function<void(const http_request&,
-                                                     http_response&)>&& handler)
+                           std::function<void(const http_request&,
+                                              http_response&)>&& handler)
   {
-    auto new_route = std::make_shared<route>(std::move(path),
-                                                std::move(handler));
+    return add_route(std::forward<std::string>(path),
+                     std::vector{ http_method::get },
+                     std::forward<std::function<void(const http_request&,
+                                                     http_response&)>>(handler));
+  }
+
+  route& server::add_route(std::string&& path,
+                           pine::http_method method,
+                           std::function<void(const http_request&,
+                                              http_response&)>&& handler)
+  {
+    return add_route(std::forward<std::string>(path),
+                     std::vector{ method },
+                     std::forward<std::function<void(const http_request&,
+                                                     http_response&)>>(handler));
+  }
+
+  route& server::add_route(std::string&& path,
+                           std::vector<pine::http_method>&& methods,
+                           std::function<void(const http_request&,
+                                              http_response&)>&& handler)
+  {
+    auto new_route =
+      std::make_shared<route>(std::forward<std::string>(path),
+                              std::forward<std::vector<
+                              pine::http_method>>(methods),
+                              std::forward<
+                              std::function<void(const http_request&,
+                                                 http_response&)>>(handler));
     this->routes.push_back(new_route);
     return *new_route;
   }
@@ -158,14 +187,34 @@ namespace pine
     return *new_route;
   }
 
-  const std::shared_ptr<route_base> server::get_route(const std::string& path) const
+  std::expected<const std::shared_ptr<route_base>, error>
+    server::get_route(const std::string& path,
+                      http_method method) const
   {
+    error result = error(error_code::route_not_found,
+                         "The route was not found.");
+
     for (const auto& route : this->routes)
     {
-      if (route->matches(path))
+      if (!route->matches(path))
+        continue;
+
+      if (bool method_found = std::find(route->methods().begin(),
+                                        route->methods().end(),
+                                        method)
+          != route->methods().end();
+          method_found)
+      {
         return route;
+      }
+      else
+      {
+        result = error(error_code::method_not_allowed,
+                       "The method is not allowed.");
+      }
     }
-    return nullptr;
+
+    return std::make_unexpected(result);
   }
 
   server& server::on_connection_attempt(

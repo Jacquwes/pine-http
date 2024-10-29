@@ -1,10 +1,11 @@
 #pragma once
 
+#include <filesystem>
 #include <http_request.h>
 #include <http_response.h>
 #include <route_base.h>
 #include <string>
-#include <filesystem>
+#include <type_traits>
 
 namespace pine
 {
@@ -27,13 +28,11 @@ namespace pine
     /// @param path The path to match in order to serve files from the location.
     /// @param location The location to serve files from.
     static_route(std::string&& path, std::filesystem::path&& location)
-      : path_(std::move(path))
+      : route_base(std::forward<std::string>(path))
       , location_(std::move(location))
     {}
 
     ~static_route() = default;
-
-    const std::string& path() const override { return path_; }
 
     /// @brief Execute the route. This function will attempt to serve the file
     /// from the location specified when the route was created and the path of
@@ -57,7 +56,6 @@ namespace pine
     bool matches(const std::string& path) const override;
 
   private:
-    std::string path_;
     std::filesystem::path location_;
   };
 }

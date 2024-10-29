@@ -5,10 +5,9 @@
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
-#include <memory>
+#include <route.h>
 #include <server.h>
 #include <server_connection.h>
-#include <route.h>
 #include <string>
 
 namespace pine
@@ -17,6 +16,42 @@ namespace pine
     : connection(socket)
     , server(server)
   {}
+
+  async_operation<void>
+    server_connection::handle_request(const http_request& request)
+  {
+    const std::string& path = request.get_uri();
+
+    const auto& route_result =
+      this->server.get_route(path, request.get_method());
+
+    http_response response;
+    response.set_header("Connection", "close");
+
+    if (!route_result)
+      switch (route_result.error().code())
+      {
+      case error_code::route_not_found:
+        response.set_header("Content-Type", "text/plain");
+        response.set_status(http_status::not_found);
+        response.set_body("404 Not Found");
+        break;
+      case error_code::method_not_allowed:
+        response.set_header("Content-Type", "text/plain");
+        response.set_status(http_status::method_not_allowed);
+        response.set_body("405 Method Not Allowed");
+        break;
+      default:
+        response.set_header("Content-Type", "text/plain");
+        response.set_status(http_status::internal_server_error);
+        response.set_body("500 Internal Server Error");
+        break;
+      }
+    else
+      route_result.value()->execute(request, response);
+
+    co_return co_await this->send_response(response);
+  }
 
   async_operation<http_request>
     pine::server_connection::receive_request() const
@@ -60,22 +95,8 @@ namespace pine
     }
 
     const auto& request = request_result.value();
-    const std::string& path = request.get_uri();
 
-    const std::shared_ptr<route_base>& route = this->server.get_route(path);
-    http_response response;
-    response.set_header("Connection", "close");
-
-    if (!route)
-    {
-      response.set_header("Content-Type", "text/plain");
-      response.set_status(http_status::not_found);
-      response.set_body("404 Not Found");
-    }
-    else
-      route->execute(request, response);
-
-    const auto& response_result = co_await this->send_response(response);
+    const auto& response_result = co_await this->handle_request(request);
 
     this->close();
     this->is_connected = false;
