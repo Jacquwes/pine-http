@@ -30,6 +30,7 @@ namespace pine
     ok = 200, /// The OK status code.
     bad_request = 400, /// The Bad Request status code.
     not_found = 404, /// The Not Found status code.
+    method_not_allowed = 405, /// The Method Not Allowed status code.
     internal_server_error = 500, /// The Internal Server Error status code.
   };
 
