@@ -5,20 +5,21 @@
 #include <cstdint>
 #include <error.h>
 #include <expected.h>
+#include <filesystem>
 #include <functional>
+#include <http.h>
 #include <http_request.h>
 #include <http_response.h>
 #include <memory>
 #include <mutex>
-#include <route_base.h>
 #include <route.h>
+#include <route_base.h>
 #include <static_route.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 #include <ws2def.h>
-#include <filesystem>
 
 namespace pine
 {
@@ -44,18 +45,43 @@ namespace pine
     async_operation<void> disconnect_client(
       uint64_t const& client_id);
 
-    /// @brief Add a route to the server.
+    /// @brief Add a route to the server. The route will be triggered when the
+    /// server receives a GET request to the specified path.
     /// @param path The HTTP path to match in order to call the handler.
     /// @param handler The function to call when the route is requested.
     /// The second parameter of the handler represents the response to send
     /// to the client.
     /// @return A reference to the created route.
     route& add_route(std::string&& path,
-                            std::function<void(const http_request&,
-                                               http_response&)>&& handler);
+                     std::function<void(const http_request&,
+                                        http_response&)>&& handler);
+    
+    /// @brief Add a route to the server.
+    /// @param path The HTTP path to match in order to call the handler.
+    /// @param method The HTTP method to match in order to call the handler.
+    /// @param handler The function to call when the route is requested.
+    /// The second parameter of the handler represents the response to send
+    /// to the client.
+    /// @return A reference to the created route.
+    route& add_route(std::string&& path,
+                     pine::http_method method,
+                     std::function<void(const http_request&,
+                                        http_response&)>&& handler);
+
+    /// @brief Add a route to the server.
+    /// @param path The HTTP path to match in order to call the handler.
+    /// @param methods The HTTP methods to match in order to call the handler.
+    /// @param handler The function to call when the route is requested.
+    /// The second parameter of the handler represents the response to send
+    /// to the client.
+    /// @return A reference to the created route.
+    route& add_route(std::string&& path,
+                     std::vector<pine::http_method>&& methods,
+                     std::function<void(const http_request&,
+                                        http_response&)>&& handler);
 
     static_route& add_static_route(std::string&& path,
-                            std::filesystem::path&& location);
+                                   std::filesystem::path&& location);
 
     const std::shared_ptr<route_base> get_route(const std::string& path) const;
 
