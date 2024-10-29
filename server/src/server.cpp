@@ -187,14 +187,34 @@ namespace pine
     return *new_route;
   }
 
-  const std::shared_ptr<route_base> server::get_route(const std::string& path) const
+  std::expected<const std::shared_ptr<route_base>, error>
+    server::get_route(const std::string& path,
+                      http_method method) const
   {
+    error result = error(error_code::route_not_found,
+                         "The route was not found.");
+
     for (const auto& route : this->routes)
     {
-      if (route->matches(path))
+      if (!route->matches(path))
+        continue;
+
+      if (bool method_found = std::find(route->methods().begin(),
+                                        route->methods().end(),
+                                        method)
+          != route->methods().end();
+          method_found)
+      {
         return route;
+      }
+      else
+      {
+        result = error(error_code::method_not_allowed,
+                       "The method is not allowed.");
+      }
     }
-    return nullptr;
+
+    return std::make_unexpected(result);
   }
 
   server& server::on_connection_attempt(

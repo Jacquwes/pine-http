@@ -55,7 +55,7 @@ namespace pine
     route& add_route(std::string&& path,
                      std::function<void(const http_request&,
                                         http_response&)>&& handler);
-    
+
     /// @brief Add a route to the server.
     /// @param path The HTTP path to match in order to call the handler.
     /// @param method The HTTP method to match in order to call the handler.
@@ -80,10 +80,20 @@ namespace pine
                      std::function<void(const http_request&,
                                         http_response&)>&& handler);
 
+    /// @brief Add a static route to the server. The route will serve files from
+    /// the specified directory, or the specified file.
+    /// @param path The path to match in order to serve files from the location.
+    /// @param location The location to serve files from.
+    /// @return 
     static_route& add_static_route(std::string&& path,
                                    std::filesystem::path&& location);
 
-    const std::shared_ptr<route_base> get_route(const std::string& path) const;
+    /// @brief Get a route by path and method.
+    /// @return If the route was found, a shared pointer to the route.
+    /// If the route was not found, an error code.
+    std::expected<const std::shared_ptr<route_base>, error>
+      get_route(const std::string& path,
+                http_method methods) const;
 
   private:
     /// @brief Accept clients.

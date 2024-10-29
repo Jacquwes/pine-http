@@ -1,11 +1,11 @@
 #include <WinSock2.h>
 #include <connection.h>
 #include <coroutine.h>
+#include <error.h>
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
-#include <memory>
-#include <route_base.h>
+#include <route.h>
 #include <server.h>
 #include <server_connection.h>
 #include <string>
@@ -22,34 +22,33 @@ namespace pine
   {
     const std::string& path = request.get_uri();
 
-    const std::shared_ptr<route_base>& route = this->server.get_route(path);
+    const auto& route_result =
+      this->server.get_route(path, request.get_method());
+
     http_response response;
     response.set_header("Connection", "close");
 
-    if (!route)
-    {
-      response.set_header("Content-Type", "text/plain");
-      response.set_status(http_status::not_found);
-      response.set_body("404 Not Found");
-    }
-    else if (auto methods = route->methods();
-             std::find(methods.begin(), methods.end(), request.get_method())
-             == methods.end())
-    {
-      response.set_header("Content-Type", "text/plain");
-      response.set_status(http_status::method_not_allowed);
-      response.set_body("405 Method Not Allowed");
-      std::string allowed_methods;
-      for (const auto& method : methods)
+    if (!route_result)
+      switch (route_result.error().code())
       {
-        allowed_methods += http_method_strings.at(method);
-        allowed_methods += ", ";
+      case error_code::route_not_found:
+        response.set_header("Content-Type", "text/plain");
+        response.set_status(http_status::not_found);
+        response.set_body("404 Not Found");
+        break;
+      case error_code::method_not_allowed:
+        response.set_header("Content-Type", "text/plain");
+        response.set_status(http_status::method_not_allowed);
+        response.set_body("405 Method Not Allowed");
+        break;
+      default:
+        response.set_header("Content-Type", "text/plain");
+        response.set_status(http_status::internal_server_error);
+        response.set_body("500 Internal Server Error");
+        break;
       }
-      allowed_methods.erase(allowed_methods.size() - 2);
-      response.set_header("Allow", allowed_methods);
-    }
     else
-      route->execute(request, response);
+      route_result.value()->execute(request, response);
 
     co_return co_await this->send_response(response);
   }
