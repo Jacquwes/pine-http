@@ -1,14 +1,13 @@
 #include <WinSock2.h>
 #include <connection.h>
 #include <coroutine.h>
-#include <error.h>
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
 #include <memory>
+#include <route_base.h>
 #include <server.h>
 #include <server_connection.h>
-#include <route.h>
 #include <string>
 
 namespace pine
@@ -17,6 +16,43 @@ namespace pine
     : connection(socket)
     , server(server)
   {}
+
+  async_operation<void>
+    server_connection::handle_request(const http_request& request)
+  {
+    const std::string& path = request.get_uri();
+
+    const std::shared_ptr<route_base>& route = this->server.get_route(path);
+    http_response response;
+    response.set_header("Connection", "close");
+
+    if (!route)
+    {
+      response.set_header("Content-Type", "text/plain");
+      response.set_status(http_status::not_found);
+      response.set_body("404 Not Found");
+    }
+    else if (auto methods = route->methods();
+             std::find(methods.begin(), methods.end(), request.get_method())
+             == methods.end())
+    {
+      response.set_header("Content-Type", "text/plain");
+      response.set_status(http_status::method_not_allowed);
+      response.set_body("405 Method Not Allowed");
+      std::string allowed_methods;
+      for (const auto& method : methods)
+      {
+        allowed_methods += http_method_strings.at(method);
+        allowed_methods += ", ";
+      }
+      allowed_methods.erase(allowed_methods.size() - 2);
+      response.set_header("Allow", allowed_methods);
+    }
+    else
+      route->execute(request, response);
+
+    co_return co_await this->send_response(response);
+  }
 
   async_operation<http_request>
     pine::server_connection::receive_request() const
@@ -60,22 +96,8 @@ namespace pine
     }
 
     const auto& request = request_result.value();
-    const std::string& path = request.get_uri();
 
-    const std::shared_ptr<route_base>& route = this->server.get_route(path);
-    http_response response;
-    response.set_header("Connection", "close");
-
-    if (!route)
-    {
-      response.set_header("Content-Type", "text/plain");
-      response.set_status(http_status::not_found);
-      response.set_body("404 Not Found");
-    }
-    else
-      route->execute(request, response);
-
-    const auto& response_result = co_await this->send_response(response);
+    const auto& response_result = co_await this->handle_request(request);
 
     this->close();
     this->is_connected = false;

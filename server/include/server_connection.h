@@ -21,6 +21,8 @@ namespace pine
     /// @brief Construct a server connection with the given socket and server.
     explicit server_connection(SOCKET socket, pine::server& server);
 
+    async_operation<void> handle_request(const http_request& request);
+
     /// @brief Receive an HTTP request.
     /// @return An asynchronous task completed when the request has been received.
     async_operation<http_request> receive_request() const;
