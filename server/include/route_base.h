@@ -3,6 +3,8 @@
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
+#include <route_path.h>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -13,9 +15,10 @@ namespace pine
   {
   public:
     route_base() = delete;
-    constexpr route_base(std::string&& path)
-      : path_(std::forward<std::string>(path))
-    {}
+    constexpr route_base(route_path path)
+    {
+      path_ = std::string(path.get());
+    }
 
     virtual ~route_base() = default;
     virtual void execute(const http_request& request,

@@ -52,7 +52,7 @@ namespace pine
     /// The second parameter of the handler represents the response to send
     /// to the client.
     /// @return A reference to the created route.
-    route& add_route(std::string&& path,
+    route& add_route(route_path path,
                      std::function<void(const http_request&,
                                         http_response&)>&& handler);
 
@@ -63,7 +63,7 @@ namespace pine
     /// The second parameter of the handler represents the response to send
     /// to the client.
     /// @return A reference to the created route.
-    route& add_route(std::string&& path,
+    route& add_route(route_path path,
                      pine::http_method method,
                      std::function<void(const http_request&,
                                         http_response&)>&& handler);
@@ -75,7 +75,7 @@ namespace pine
     /// The second parameter of the handler represents the response to send
     /// to the client.
     /// @return A reference to the created route.
-    route& add_route(std::string&& path,
+    route& add_route(route_path path,
                      std::vector<pine::http_method>&& methods,
                      std::function<void(const http_request&,
                                         http_response&)>&& handler);
@@ -85,7 +85,7 @@ namespace pine
     /// @param path The path to match in order to serve files from the location.
     /// @param location The location to serve files from.
     /// @return 
-    static_route& add_static_route(std::string&& path,
+    static_route& add_static_route(route_path path,
                                    std::filesystem::path&& location);
 
     /// @brief Get a route by path and method.
