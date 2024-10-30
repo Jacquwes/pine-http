@@ -27,8 +27,8 @@ namespace pine
     /// - If the location is a file, the route will serve that file.
     /// @param path The path to match in order to serve files from the location.
     /// @param location The location to serve files from.
-    static_route(std::string&& path, std::filesystem::path&& location)
-      : route_base(std::forward<std::string>(path))
+    static_route(route_path path, std::filesystem::path&& location)
+      : route_base(path)
       , location_(std::move(location))
     {}
 

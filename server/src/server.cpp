@@ -142,34 +142,34 @@ namespace pine
     co_return{};
   }
 
-  route& server::add_route(std::string&& path,
+  route& server::add_route(route_path path,
                            std::function<void(const http_request&,
                                               http_response&)>&& handler)
   {
-    return add_route(std::forward<std::string>(path),
+    return add_route(path,
                      std::vector{ http_method::get },
                      std::forward<std::function<void(const http_request&,
                                                      http_response&)>>(handler));
   }
 
-  route& server::add_route(std::string&& path,
+  route& server::add_route(route_path path,
                            pine::http_method method,
                            std::function<void(const http_request&,
                                               http_response&)>&& handler)
   {
-    return add_route(std::forward<std::string>(path),
+    return add_route(path,
                      std::vector{ method },
                      std::forward<std::function<void(const http_request&,
                                                      http_response&)>>(handler));
   }
 
-  route& server::add_route(std::string&& path,
+  route& server::add_route(route_path path,
                            std::vector<pine::http_method>&& methods,
                            std::function<void(const http_request&,
                                               http_response&)>&& handler)
   {
     auto new_route =
-      std::make_shared<route>(std::forward<std::string>(path),
+      std::make_shared<route>(path,
                               std::forward<std::vector<
                               pine::http_method>>(methods),
                               std::forward<
@@ -179,9 +179,9 @@ namespace pine
     return *new_route;
   }
 
-  static_route& server::add_static_route(std::string&& path, std::filesystem::path&& location)
+  static_route& server::add_static_route(route_path path, std::filesystem::path&& location)
   {
-    auto new_route = std::make_shared<static_route>(std::move(path),
+    auto new_route = std::make_shared<static_route>(path,
                                                     std::move(location));
     this->routes.push_back(new_route);
     return *new_route;

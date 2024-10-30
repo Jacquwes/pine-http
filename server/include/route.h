@@ -15,17 +15,18 @@ namespace pine
   {
   public:
     route() = default;
-    route(std::string&& path,
+    route(route_path path,
           std::function<void(const http_request&,
                              http_response&)>&&
           handler);
-    route(std::string&& path,
+
+    route(route_path path,
           http_method method,
           std::function<void(const http_request&,
                              http_response&)>&&
           handler);
 
-    route(std::string&& path,
+    route(route_path path,
           std::vector<http_method>&& methods,
           std::function<void(const http_request&,
                              http_response&)>&&
