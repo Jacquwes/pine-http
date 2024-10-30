@@ -17,6 +17,7 @@ target_sources(server
     "include/server_connection.h"
     "include/route.h" 
     "include/route_base.h"
+    "include/route_path.h"
     "include/static_route.h"
 )
 
