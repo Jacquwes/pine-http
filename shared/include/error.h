@@ -22,6 +22,7 @@ namespace pine
     getaddrinfo_error,
   #endif // _WIN32
     coroutine_cancelled,
+    path_parameter_conflict,
   };
 
   class error
