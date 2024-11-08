@@ -100,6 +100,11 @@ namespace pine
       return path_;
     }
 
+    explicit(false) constexpr operator std::string_view() const noexcept
+    {
+      return path_;
+    }
+
   private:
     std::string_view path_;
   };
