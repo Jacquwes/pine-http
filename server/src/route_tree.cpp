@@ -1,67 +1,67 @@
-#include <error.h>
 #include <expected.h>
-#include <functional>
 #include <http.h>
-#include <http_request.h>
-#include <http_response.h>
-#include <initializer_list>
 #include <memory>
 #include <route_node.h>
 #include <route_path.h>
 #include <route_tree.h>
+#include <string_view>
+#include <utility>
 
 namespace pine
 {
-  std::expected<void, error>
-    route_tree::add_route(const route_path& path,
-                          const std::function<void(const http_request&,
-                                                   http_response&)>& handler,
-                          std::initializer_list<http_method> methods)
-    const
+  route_node route_tree::unknown_route("");
+
+  route_node& route_tree::add_route(const route_path& path)
+  {
+    auto [match, deepest_node] = get_deepest_node(path);
+    if (match)
+      return deepest_node;
+
+    auto node = &deepest_node;
+    const auto& parts = path.parts();
+
+    for (const auto& part : parts)
+      node = &node->add_child(part);
+
+    return *node;
+  }
+
+  const route_node&
+    route_tree::find_route(std::string_view path) const
   {
     auto node = root_.get();
 
-    for (const auto& part : path.parts())
-    {
-      route_node* child = nullptr;
+    if (path == "/")
+      return *node;
 
-      auto child_result = node->find_child(part);
-      if (!child_result)
-      {
-        auto add_result = node->add_child(part);
-        if (!add_result)
-          return std::make_unexpected(add_result.error());
-        child = &add_result.value();
-      }
-      else
-        child = &child_result.value();
+    for (size_t i = 0; i < path.size();)
+    {
+      auto child = &node->find_child(path.substr(i));
+      if (child == &unknown_route)
+        return unknown_route;
 
       node = child;
+      i += node->path().size();
     }
 
-    for (auto method : methods)
-      node->add_handler(method,
-                        std::make_unique<route_node::handler_type>(handler));
+    return *node;
   }
 
-  std::expected<route_node&, error>
-    route_tree::find_route(std::string_view path, http_method method) const
+  std::pair<bool, route_node&>
+    route_tree::get_deepest_node(std::string_view path) const
   {
     auto node = root_.get();
 
     for (size_t i = 0; i < path.size();)
     {
-      auto child_result = node->find_child(path.substr(i));
-      if (!child_result)
-        return (child_result);
+      auto child = &node->find_child(path.substr(i));
+      if (child == &unknown_route)
+        return { false, *node };
 
-      node = &child_result.value();
+      node = child;
       i += node->path().size();
     }
 
-    if (node->handlers()[static_cast<size_t>(method)] != nullptr)
-      return *node;
-
-    return std::make_unexpected(error(error_code::route_not_found));
+    return { true, *node };
   }
 }
