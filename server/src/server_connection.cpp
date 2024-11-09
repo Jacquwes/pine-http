@@ -27,7 +27,7 @@ namespace pine
     http_response response;
     response.set_header("Connection", "close");
 
-    if (&route == &route_tree::unknown_route)
+    if (!found)
     {
       response.set_header("Content-Type", "text/plain");
       response.set_status(http_status::not_found);
