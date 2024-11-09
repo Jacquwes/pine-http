@@ -112,13 +112,47 @@ namespace pine
     http_method_mask_ |= 1 << static_cast<size_t>(method);
   }
 
+  static bool paths_match(std::string_view node_path, std::string_view path)
+  {
+    // node_path: api
+    // path:      api/users/
+    // should return true, because api is a prefix of api/users
+    size_t child_length = node_path.size();
+    size_t path_length = path.size();
+    size_t min_length = std::min(child_length, path_length);
+
+    size_t i;
+    for (i = 0; i < min_length; i++)
+    {
+      if (path[i] != '/' && path[i] != node_path[i])
+        return false;
+
+      if (path[i] == '/')
+      {
+        if (i == child_length)
+          return true;
+
+        return false;
+      }
+    }
+
+    // check if the path is a prefix of the node path
+    if (child_length > path_length)
+      return false;
+
+    if (child_length == path_length)
+      return true;
+
+    return path[i] == '/';
+  }
+
   route_node&
     route_node::find_child(std::string_view path) const noexcept
   {
-    for (auto& child : children_)
+    for (const auto& child : children_)
     {
-      if (path == child->path())
-        return *child.get();
+      if (paths_match(child->path_, path))
+        return *child;
     }
 
     if (has_path_parameter_children_)
