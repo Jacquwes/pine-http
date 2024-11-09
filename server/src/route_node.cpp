@@ -86,7 +86,7 @@ namespace pine
 
 
   route_node&
-    route_node::add_child(std::string_view path) noexcept
+    route_node::add_child(std::string_view path)
   {
     auto child = std::make_unique<route_node>(path);
     auto child_ptr = child.get();
@@ -95,6 +95,9 @@ namespace pine
 
     if (child_ptr->is_path_parameter_)
     {
+      if (has_path_parameter_children_)
+        throw error(error_code::path_parameter_conflict);
+
       has_path_parameter_children_ = true;
       path_parameter_child_ = child_ptr;
     }

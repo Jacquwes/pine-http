@@ -63,7 +63,7 @@ namespace pine
     /// @return A reference to the child. If the child already exists, a
     /// reference to the existing child.
     route_node&
-      add_child(std::string_view path) noexcept;
+      add_child(std::string_view path);
 
     /// @brief Add a handler to the node. The handler will be called when the
     /// route represented by the node is requested and the method matches.
