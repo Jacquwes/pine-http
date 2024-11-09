@@ -51,9 +51,11 @@ namespace pine
   private:
     /// @brief Gets the deepest node in the tree that matches the path.
     /// @param path The path to search for.
-    /// @return A pair with a boolean indicating if the node was found and a
+    /// @return A tuple with a boolean indicating if the node was found, a
+    /// size_t indicating the depth of the node in the tree, and a reference to
+    /// the deepest corresponding node.
     /// reference to the node.
-    std::pair<bool, route_node&>
+    std::tuple<bool, size_t, route_node&>
       get_deepest_node(std::string_view path) const;
 
     std::unique_ptr<route_node> root_ = std::make_unique<route_node>("/");

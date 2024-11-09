@@ -47,21 +47,28 @@ namespace pine
     return *node;
   }
 
-  std::pair<bool, route_node&>
+  std::tuple<bool, size_t, route_node&>
     route_tree::get_deepest_node(std::string_view path) const
   {
     auto node = root_.get();
+    size_t depth = 0;
+
+    if (path == "/")
+      return { true, depth, *node };
+
+    path.remove_prefix(1);
 
     for (size_t i = 0; i < path.size();)
     {
       auto child = &node->find_child(path.substr(i));
       if (child == &unknown_route)
-        return { false, *node };
+        return { false, depth, *node };
 
       node = child;
-      i += node->path().size();
+      i += node->path().size() + 1;
+      depth++;
     }
 
-    return { true, *node };
+    return { true, depth, *node };
   }
 }
