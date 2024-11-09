@@ -80,11 +80,28 @@ namespace pine
 
 namespace pine
 {
-  route_node::route_node(std::string_view path) noexcept
+  route_node::route_node(std::string_view path)
     : path_(path),
     is_path_parameter_(path.starts_with(':'))
-  {}
+  {
+    if (path_ == "/")
+    {
+      path_ = "";
+      return;
+    }
 
+    for (size_t i = 0; i < path.size(); i++)
+    {
+      if (path[i] == '/')
+      {
+        // construct child with the rest of the path
+        path_ = path.substr(0, i);
+        add_child(path.substr(i + 1));
+        break;
+      }
+    }
+
+  }
 
   route_node&
     route_node::add_child(std::string_view path)

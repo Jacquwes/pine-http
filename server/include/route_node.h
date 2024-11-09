@@ -36,9 +36,12 @@ namespace pine
     /// with the pine::http_request::get_path_param<T>(std::string_view name)
     /// function.
     /// 
+    /// If the path contains a /, the node will contain children. The children
+    /// are used to represent the rest of the route.
+    /// 
     /// @param path The path of the node.
     /// @return A new base route node.
-    explicit(false) route_node(std::string_view path) noexcept;
+    explicit(false) route_node(std::string_view path);
 
     void handle(const http_request& request,
                 http_response& response) const noexcept
