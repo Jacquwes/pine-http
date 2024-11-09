@@ -1,4 +1,6 @@
 project(tests)
 
-# add_subdirectory(integration)
+enable_testing()
+find_package(doctest REQUIRED)
+
 add_subdirectory(unit)
