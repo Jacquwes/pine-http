@@ -13,15 +13,17 @@ namespace pine
 
   route_node& route_tree::add_route(const route_path& path)
   {
-    auto [match, deepest_node] = get_deepest_node(path);
+    auto [match, depth, deepest_node] = get_deepest_node(path);
     if (match)
       return deepest_node;
 
     auto node = &deepest_node;
     const auto& parts = path.parts();
 
-    for (const auto& part : parts)
-      node = &node->add_child(part);
+    for (size_t i = depth; i < parts.size(); i++)
+    {
+        node = &node->add_child(parts[i]);
+    }
 
     return *node;
   }
