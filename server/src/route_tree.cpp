@@ -80,11 +80,12 @@ namespace pine
 
         params[std::string(param_name)] = path.substr(i, end - i);
 
-        i = end;
+        i = end + 1;
       }
+      else
+        i += node->path().size() + 1;
 
       node = child;
-      i += node->path().size() + 1;
     }
 
     return { *node, true, params };
