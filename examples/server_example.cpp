@@ -17,18 +17,17 @@ int main()
                    {
                      response.set_status(pine::http_status::ok);
                      response.set_body("Hello, world!");
-                   })
-    .set_methods({ pine::http_method::get, pine::http_method::head });
+                   });
 
   // Add a route that responds to POST requests to the root path.
   server.add_route("/",
-                   pine::http_method::post,
                    [](const pine::http_request& request,
                       pine::http_response& response)
                    {
                      response.set_status(pine::http_status::ok);
                      response.set_body("Hello, post!");
-                   });
+                   },
+                   { pine::http_method::post });
 
 
   // Add a route that responds to GET requests to /public_directory/*.

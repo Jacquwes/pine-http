@@ -7,18 +7,18 @@ add_library(server STATIC)
 
 target_sources(server
   PRIVATE
+    "src/route_node.cpp"
+    "src/route_tree.cpp" 
     "src/server.cpp"
     "src/server_connection.cpp"
-    "src/route.cpp" 
-    "src/static_route.cpp"
+    "src/route_node.cpp"
 
   PUBLIC
+    "include/route_node.h" 
+    "include/route_tree.h"
+    "include/route_path.h"
     "include/server.h"
     "include/server_connection.h"
-    "include/route.h" 
-    "include/route_base.h"
-    "include/route_path.h"
-    "include/static_route.h"
 )
 
 target_include_directories(server PUBLIC include)
