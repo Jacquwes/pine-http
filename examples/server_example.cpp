@@ -12,23 +12,42 @@ int main()
   // Add a route that responds to GET and HEAD requests to the root path.
   // If the path is not valid, the compilation will fail.
   server.add_route("/",
-                   [](const pine::http_request& request,
+                   [](const pine::http_request&,
                       pine::http_response& response)
                    {
                      response.set_status(pine::http_status::ok);
                      response.set_body("Hello, world!");
                    });
 
-  // Add a route that responds to POST requests to the root path.
-  server.add_route("/",
+  // Add a route that responds to POST request with a path parameter.
+  server.add_route("/:name",
                    [](const pine::http_request& request,
                       pine::http_response& response)
                    {
+                     const auto& name = request.get_path_param<std::string>("name");
+                     if (!name)
+                     {
+                       switch (name.error().code())
+                       {
+                       case pine::error_code::parameter_not_found:
+                         response.set_status(pine::http_status::bad_request);
+                         response.set_body("The parameter 'name' is required.");
+                         return;
+                       case pine::error_code::invalid_parameter:
+                         response.set_status(pine::http_status::bad_request);
+                         response.set_body("The parameter 'name' is invalid.");
+                         return;
+                       default:
+                         response.set_status(pine::http_status::internal_server_error);
+                         response.set_body("An error occurred.");
+                         return;
+                       }
+                     }
+
                      response.set_status(pine::http_status::ok);
-                     response.set_body("Hello, post!");
+                     response.set_body("Hello, " + name.value() + "!");
                    },
                    { pine::http_method::post });
-
 
   // Add a route that responds to GET requests to /public_directory/*.
   // This route will serve files from the public directory.
