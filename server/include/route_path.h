@@ -65,7 +65,6 @@ namespace pine
       if (path[0] != '/')
         return false;
 
-      char prev = path[0];
       for (size_t i = 1; i < path.size(); ++i)
       {
         if ((path[i] < 'a' || path[i] > 'z') &&
@@ -97,6 +96,11 @@ namespace pine
 
     /// @brief Get the path as a string view.
     constexpr auto get() const noexcept
+    {
+      return path_;
+    }
+
+    explicit(false) constexpr operator std::string_view() const noexcept
     {
       return path_;
     }

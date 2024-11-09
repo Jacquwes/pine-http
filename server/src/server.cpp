@@ -7,12 +7,13 @@
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
+#include <initializer_list>
 #include <memory>
-#include <route.h>
-#include <route_base.h>
+#include <route_node.h>
+#include <route_path.h>
+#include <route_tree.h>
 #include <server.h>
 #include <server_connection.h>
-#include <static_route.h>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -95,7 +96,8 @@ namespace pine
       }
 
       const auto& client_socket = accept_socket_result.value();
-      const auto& client = std::make_shared<server_connection>(client_socket, *this);
+      const auto& client = std::make_shared<server_connection>(client_socket,
+                                                               *this);
 
       for (const auto& callback : this->on_connection_attemps_callbacks)
       {
@@ -142,79 +144,37 @@ namespace pine
     co_return{};
   }
 
-  route& server::add_route(route_path path,
-                           std::function<void(const http_request&,
-                                              http_response&)>&& handler)
+  route_node&
+    server::add_route(route_path path,
+                      const std::function<void(const http_request&,
+                                               http_response&)>& handler,
+                      const std::initializer_list<http_method>& methods)
   {
-    return add_route(path,
-                     std::vector{ http_method::get },
-                     std::forward<std::function<void(const http_request&,
-                                                     http_response&)>>(handler));
-  }
-
-  route& server::add_route(route_path path,
-                           pine::http_method method,
-                           std::function<void(const http_request&,
-                                              http_response&)>&& handler)
-  {
-    return add_route(path,
-                     std::vector{ method },
-                     std::forward<std::function<void(const http_request&,
-                                                     http_response&)>>(handler));
-  }
-
-  route& server::add_route(route_path path,
-                           std::vector<pine::http_method>&& methods,
-                           std::function<void(const http_request&,
-                                              http_response&)>&& handler)
-  {
-    auto new_route =
-      std::make_shared<route>(path,
-                              std::forward<std::vector<
-                              pine::http_method>>(methods),
-                              std::forward<
-                              std::function<void(const http_request&,
-                                                 http_response&)>>(handler));
-    this->routes.push_back(new_route);
-    return *new_route;
-  }
-
-  static_route& server::add_static_route(route_path path, std::filesystem::path&& location)
-  {
-    auto new_route = std::make_shared<static_route>(path,
-                                                    std::move(location));
-    this->routes.push_back(new_route);
-    return *new_route;
-  }
-
-  std::expected<const std::shared_ptr<route_base>, error>
-    server::get_route(const std::string& path,
-                      http_method method) const
-  {
-    error result = error(error_code::route_not_found,
-                         "The route was not found.");
-
-    for (const auto& route : this->routes)
+    auto& new_route = routes.add_route(path);
+    for (const auto& method : methods)
     {
-      if (!route->matches(path))
-        continue;
-
-      if (bool method_found = std::find(route->methods().begin(),
-                                        route->methods().end(),
-                                        method)
-          != route->methods().end();
-          method_found)
-      {
-        return route;
-      }
-      else
-      {
-        result = error(error_code::method_not_allowed,
-                       "The method is not allowed.");
-      }
+      new_route.add_handler(method,
+                            std::make_unique<route_tree::handler_type>(handler));
     }
 
-    return std::make_unexpected(result);
+    return new_route;
+  }
+
+  route_node& server::add_static_route(route_path path,
+                                     std::filesystem::path&&
+                                     location)
+  {
+    auto& new_route = routes.add_route(path);
+
+    new_route.serve_files(std::move(location));
+
+    return new_route;
+  }
+
+  const route_node&
+    server::get_route(std::string_view path) const
+  {
+    return routes.find_route(path);
   }
 
   server& server::on_connection_attempt(

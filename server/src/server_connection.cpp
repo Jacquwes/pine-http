@@ -5,7 +5,6 @@
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
-#include <route.h>
 #include <server.h>
 #include <server_connection.h>
 #include <string>
@@ -18,37 +17,30 @@ namespace pine
   {}
 
   async_operation<void>
-    server_connection::handle_request(const http_request& request)
+    server_connection::handle_request(const http_request& request) const
   {
     const std::string& path = request.get_uri();
 
-    const auto& route_result =
-      this->server.get_route(path, request.get_method());
+    const auto& route =
+      this->server.get_route(path);
 
     http_response response;
     response.set_header("Connection", "close");
 
-    if (!route_result)
-      switch (route_result.error().code())
-      {
-      case error_code::route_not_found:
-        response.set_header("Content-Type", "text/plain");
-        response.set_status(http_status::not_found);
-        response.set_body("404 Not Found");
-        break;
-      case error_code::method_not_allowed:
-        response.set_header("Content-Type", "text/plain");
-        response.set_status(http_status::method_not_allowed);
-        response.set_body("405 Method Not Allowed");
-        break;
-      default:
-        response.set_header("Content-Type", "text/plain");
-        response.set_status(http_status::internal_server_error);
-        response.set_body("500 Internal Server Error");
-        break;
-      }
+    if (&route == &route_tree::unknown_route)
+    {
+      response.set_header("Content-Type", "text/plain");
+      response.set_status(http_status::not_found);
+      response.set_body("404 Not Found");
+    }
+    else if (route.handlers()[static_cast<size_t>(request.get_method())] == nullptr)
+    {
+      response.set_header("Content-Type", "text/plain");
+      response.set_status(http_status::method_not_allowed);
+      response.set_body("405 Method Not Allowed");
+    }
     else
-      route_result.value()->execute(request, response);
+      route.handle(request, response);
 
     co_return co_await this->send_response(response);
   }

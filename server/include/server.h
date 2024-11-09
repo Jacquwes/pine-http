@@ -3,6 +3,7 @@
 #include <WinSock2.h>
 #include <coroutine.h>
 #include <cstdint>
+#include <route_node.h>
 #include <error.h>
 #include <expected.h>
 #include <filesystem>
@@ -10,16 +11,18 @@
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
+#include <initializer_list>
 #include <memory>
 #include <mutex>
-#include <route.h>
-#include <route_base.h>
-#include <static_route.h>
+#include <route_tree.h>
+#include <route_node.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 #include <ws2def.h>
+#include "route_node.h"
+#include "route_path.h"
 
 namespace pine
 {
@@ -45,29 +48,6 @@ namespace pine
     async_operation<void> disconnect_client(
       uint64_t const& client_id);
 
-    /// @brief Add a route to the server. The route will be triggered when the
-    /// server receives a GET request to the specified path.
-    /// @param path The HTTP path to match in order to call the handler.
-    /// @param handler The function to call when the route is requested.
-    /// The second parameter of the handler represents the response to send
-    /// to the client.
-    /// @return A reference to the created route.
-    route& add_route(route_path path,
-                     std::function<void(const http_request&,
-                                        http_response&)>&& handler);
-
-    /// @brief Add a route to the server.
-    /// @param path The HTTP path to match in order to call the handler.
-    /// @param method The HTTP method to match in order to call the handler.
-    /// @param handler The function to call when the route is requested.
-    /// The second parameter of the handler represents the response to send
-    /// to the client.
-    /// @return A reference to the created route.
-    route& add_route(route_path path,
-                     pine::http_method method,
-                     std::function<void(const http_request&,
-                                        http_response&)>&& handler);
-
     /// @brief Add a route to the server.
     /// @param path The HTTP path to match in order to call the handler.
     /// @param methods The HTTP methods to match in order to call the handler.
@@ -75,25 +55,26 @@ namespace pine
     /// The second parameter of the handler represents the response to send
     /// to the client.
     /// @return A reference to the created route.
-    route& add_route(route_path path,
-                     std::vector<pine::http_method>&& methods,
-                     std::function<void(const http_request&,
-                                        http_response&)>&& handler);
+    route_node&
+      add_route(route_path path,
+                const std::function<void(const http_request&,
+                                         http_response&)>& handler,
+                const std::initializer_list<pine::http_method>& methods
+                = { http_method::get });
 
     /// @brief Add a static route to the server. The route will serve files from
     /// the specified directory, or the specified file.
     /// @param path The path to match in order to serve files from the location.
     /// @param location The location to serve files from.
     /// @return 
-    static_route& add_static_route(route_path path,
-                                   std::filesystem::path&& location);
+    route_node& add_static_route(route_path path,
+                               std::filesystem::path&& location);
 
     /// @brief Get a route by path and method.
     /// @return If the route was found, a shared pointer to the route.
     /// If the route was not found, an error code.
-    std::expected<const std::shared_ptr<route_base>, error>
-      get_route(const std::string& path,
-                http_method methods) const;
+    const route_node&
+      get_route(std::string_view path) const;
 
   private:
     /// @brief Accept clients.
@@ -107,7 +88,7 @@ namespace pine
     std::mutex mutate_clients_mutex;
 
     std::unordered_map<uint64_t, std::shared_ptr<server_connection>> clients;
-    std::vector<std::shared_ptr<route_base>> routes;
+    route_tree routes;
 
     const char* port;
   #ifdef _WIN32
