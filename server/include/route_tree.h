@@ -8,6 +8,7 @@
 #include <route_node.h>
 #include <route_path.h>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace pine
@@ -42,6 +43,17 @@ namespace pine
     /// @return A reference to the route node if found; otherwise, a reference to
     /// the unknown route node.
     const route_node& find_route(std::string_view path) const;
+
+    /// @brief Finds a route in the tree and gathers the path parameters.
+    /// @param path The path to search for.
+    /// @param method The HTTP method to search for.
+    /// @return A tuple with a reference to the route node if found, a boolean
+    /// indicating if the route was found, and a map with the path parameters.
+    /// reference to the node.
+    std::tuple<const route_node&,
+      bool, 
+      std::unordered_map<std::string, std::string_view>>
+      find_route_with_params(std::string_view path) const;
 
     /// @brief Gets the root node of the tree.
     /// @return A reference to the root node.

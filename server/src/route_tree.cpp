@@ -5,6 +5,7 @@
 #include <route_path.h>
 #include <route_tree.h>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace pine
@@ -22,7 +23,7 @@ namespace pine
 
     for (size_t i = depth; i < parts.size(); i++)
     {
-        node = &node->add_child(parts[i]);
+      node = &node->add_child(parts[i]);
     }
 
     return *node;
@@ -49,6 +50,44 @@ namespace pine
     }
 
     return *node;
+  }
+
+  std::tuple<const route_node&,
+    bool,
+    std::unordered_map<std::string, std::string_view>>
+    route_tree::find_route_with_params(std::string_view path) const
+  {
+    auto node = root_.get();
+    std::unordered_map<std::string, std::string_view> params;
+
+    if (path == "/")
+      return { *node, true, params };
+
+    path.remove_prefix(1);
+
+    for (size_t i = 0; i < path.size();)
+    {
+      auto child = &node->find_child(path.substr(i));
+      if (child == &unknown_route)
+        return { *node, false, params };
+
+      if (child->is_path_parameter())
+      {
+        std::string_view param_name = child->path().substr(1);
+        size_t end = path.find_first_of("/", i);
+        if (end == std::string_view::npos)
+          end = path.size();
+
+        params[std::string(param_name)] = path.substr(i, end - i);
+
+        i = end;
+      }
+
+      node = child;
+      i += node->path().size() + 1;
+    }
+
+    return { *node, true, params };
   }
 
   std::tuple<bool, size_t, route_node&>
