@@ -8,6 +8,7 @@
 #include <server.h>
 #include <server_connection.h>
 #include <string>
+#include <type_traits>
 
 namespace pine
 {
@@ -17,12 +18,11 @@ namespace pine
   {}
 
   async_operation<void>
-    server_connection::handle_request(const http_request& request) const
+    server_connection::handle_request(http_request& request) const
   {
     const std::string& path = request.get_uri();
 
-    const auto& route =
-      this->server.get_route(path);
+    const auto& [route, found, params] = this->server.routes.find_route_with_params(path);
 
     http_response response;
     response.set_header("Connection", "close");
@@ -40,7 +40,14 @@ namespace pine
       response.set_body("405 Method Not Allowed");
     }
     else
+    {
+      for (const auto& [name, value] : params)
+      {
+        request.add_path_param(name, value);
+      }
+
       route.handle(request, response);
+    }
 
     co_return co_await this->send_response(response);
   }
@@ -79,14 +86,14 @@ namespace pine
   {
     this->is_connected = true;
 
-    const auto& request_result = co_await this->receive_request();
+    auto&& request_result = co_await this->receive_request();
     if (!request_result)
     {
       this->is_connected = false;
       co_return request_result.error();
     }
 
-    const auto& request = request_result.value();
+    auto&& request = std::move(request_result.value());
 
     const auto& response_result = co_await this->handle_request(request);
 
