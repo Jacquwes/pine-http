@@ -23,6 +23,8 @@ namespace pine
   #endif // _WIN32
     coroutine_cancelled,
     path_parameter_conflict,
+    invalid_parameter,
+    parameter_not_found,
   };
 
   class error
