@@ -83,7 +83,7 @@ namespace pine
         i = end + 1;
       }
       else
-        i += node->path().size() + 1;
+        i += child->path().size() + 1;
 
       node = child;
     }
