@@ -39,7 +39,8 @@ namespace pine
     /// @brief Finds a route in the tree.
     /// @param path The path to search for.
     /// @param method The HTTP method to search for.
-    /// @return A shared pointer to the route node if found, otherwise nullptr.
+    /// @return A reference to the route node if found; otherwise, a reference to
+    /// the unknown route node.
     const route_node& find_route(std::string_view path) const;
 
     /// @brief Gets the root node of the tree.
