@@ -48,6 +48,12 @@ namespace pine
     { http_method::get, "GET" },
     { http_method::head, "HEAD" },
     { http_method::post, "POST" },
+    { http_method::put, "PUT" },
+    { http_method::delete_, "DELETE" },
+    { http_method::connect, "CONNECT" },
+    { http_method::options, "OPTIONS" },
+    { http_method::trace, "TRACE" },
+    { http_method::patch, "PATCH" },
   };
 
   /// @brief Represents an HTTP status code.
