@@ -81,6 +81,27 @@ namespace pine
     route_node&
       find_child(std::string_view path) const noexcept;
 
+    /// @brief Check if the node is a path parameter node.
+    /// @return True if the node is a path parameter node, otherwise false.
+    constexpr bool is_path_parameter() const noexcept
+    {
+      return is_path_parameter_;
+    }
+
+    /// @brief Check if the node has children that are path parameter nodes.
+    /// @return True if the node has children that are path parameter nodes,
+    constexpr bool has_path_parameter_children() const noexcept
+    {
+      return has_path_parameter_children_;
+    }
+
+    /// @brief Get the list of children of the node.
+    /// @return The list of children of the node.
+    constexpr const std::vector<std::unique_ptr<route_node>>& children() const noexcept
+    {
+      return children_;
+    }
+
     route_node& serve_files(std::filesystem::path&& location);
 
   private:

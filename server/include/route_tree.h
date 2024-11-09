@@ -42,6 +42,10 @@ namespace pine
     /// @return A shared pointer to the route node if found, otherwise nullptr.
     const route_node& find_route(std::string_view path) const;
 
+    /// @brief Gets the root node of the tree.
+    /// @return A reference to the root node.
+    route_node& root() noexcept { return *root_; }
+
     static route_node unknown_route;
 
   private:
