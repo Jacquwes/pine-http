@@ -52,7 +52,7 @@ namespace pine
     if (!std::filesystem::exists(location))
     {
       response.set_status(http_status::not_found);
-      response.set_body("Not found");
+      response.set_body("404 Not found");
       return;
     }
 
@@ -69,7 +69,7 @@ namespace pine
     if (!std::filesystem::exists(file_location))
     {
       response.set_status(http_status::not_found);
-      response.set_body("Not found");
+      response.set_body("404 Not found");
       return;
     }
 
@@ -188,6 +188,8 @@ namespace pine
         {
           pine::serve_files(path_, request, response, location);
         });
+
+    http_method_mask_ |= 1 << static_cast<size_t>(http_method::get);
 
     return *this;
   }
