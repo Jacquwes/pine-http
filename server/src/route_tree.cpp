@@ -34,6 +34,8 @@ namespace pine
     if (path == "/")
       return *node;
 
+    path.remove_prefix(1);
+
     for (size_t i = 0; i < path.size();)
     {
       auto child = &node->find_child(path.substr(i));
@@ -41,7 +43,7 @@ namespace pine
         return unknown_route;
 
       node = child;
-      i += node->path().size();
+      i += node->path().size() + 1;
     }
 
     return *node;
