@@ -2,12 +2,22 @@
 #include <cstdint>
 #include <error.h>
 #include <expected.h>
+#include <filesystem>
 #include <functional>
+#include <http.h>
+#include <http_request.h>
+#include <http_response.h>
+#include <initializer_list>
 #include <memory>
-#include <system_error>
+#include <route_node.h>
+#include <route_path.h>
+#include <route_tree.h>
+#include <server.h>
+#include <server_connection.h>
+#include <string>
+#include <type_traits>
+#include <vector>
 #include <wsa.h>
-#include "server.h"
-#include "server_connection.h"
 
 namespace pine
 {
@@ -86,7 +96,8 @@ namespace pine
       }
 
       const auto& client_socket = accept_socket_result.value();
-      const auto& client = std::make_shared<server_connection>(client_socket);
+      const auto& client = std::make_shared<server_connection>(client_socket,
+                                                               *this);
 
       for (const auto& callback : this->on_connection_attemps_callbacks)
       {
@@ -130,7 +141,40 @@ namespace pine
 
     clients.erase(client_id);
 
-    co_return error(error_code::success);
+    co_return{};
+  }
+
+  route_node&
+    server::add_route(route_path path,
+                      const std::function<void(const http_request&,
+                                               http_response&)>& handler,
+                      const std::initializer_list<http_method>& methods)
+  {
+    auto& new_route = routes.add_route(path);
+    for (const auto& method : methods)
+    {
+      new_route.add_handler(method,
+                            std::make_unique<route_tree::handler_type>(handler));
+    }
+
+    return new_route;
+  }
+
+  route_node& server::add_static_route(route_path path,
+                                     std::filesystem::path&&
+                                     location)
+  {
+    auto& new_route = routes.add_route(path);
+
+    new_route.serve_files(std::move(location));
+
+    return new_route;
+  }
+
+  const route_node&
+    server::get_route(std::string_view path) const
+  {
+    return routes.find_route(path);
   }
 
   server& server::on_connection_attempt(

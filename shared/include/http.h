@@ -9,12 +9,38 @@
 namespace pine
 {
   /// @brief Represents an HTTP method.
+  /// More information at https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods.
   enum class http_method
   {
-    get, /// The GET method.
-    head, /// The HEAD method.
-    post, /// The POST method.
+    /// The GET method requests a representation of the specified resource. 
+    /// Requests using GET should only retrieve data and should not contain a
+    /// request content.
+    get = 1,
+    /// The HEAD method asks for a response identical to that of a GET request,
+    /// but without the response body.
+    head,
+    /// The POST method is used to submit an entity to the specified resource, 
+    /// often causing a change in state or side effects on the server.
+    post,
+    /// The PUT method replaces all current representations of the target 
+    /// resource with the request payload.
+    put,
+    /// The DELETE method deletes the specified resource.
+    delete_,
+    /// The CONNECT method establishes a tunnel to the server identified by the
+    /// target resource.
+    connect,
+    /// The OPTIONS method is used to describe the communication options for 
+    /// the target resource.
+    options,
+    /// The TRACE method performs a message loop-back test along the path to
+    /// the target resource.
+    trace,
+    /// The PATCH method is used to apply partial modifications to a resource.
+    patch,
   };
+
+  constexpr auto http_method_count = 9;
 
   /// @brief Map of HTTP methods to their string representations.
   inline const std::map<http_method, std::string> http_method_strings
@@ -22,6 +48,12 @@ namespace pine
     { http_method::get, "GET" },
     { http_method::head, "HEAD" },
     { http_method::post, "POST" },
+    { http_method::put, "PUT" },
+    { http_method::delete_, "DELETE" },
+    { http_method::connect, "CONNECT" },
+    { http_method::options, "OPTIONS" },
+    { http_method::trace, "TRACE" },
+    { http_method::patch, "PATCH" },
   };
 
   /// @brief Represents an HTTP status code.
@@ -30,6 +62,7 @@ namespace pine
     ok = 200, /// The OK status code.
     bad_request = 400, /// The Bad Request status code.
     not_found = 404, /// The Not Found status code.
+    method_not_allowed = 405, /// The Method Not Allowed status code.
     internal_server_error = 500, /// The Internal Server Error status code.
   };
 
@@ -39,6 +72,7 @@ namespace pine
     { http_status::ok, "OK" },
     { http_status::bad_request, "Bad Request" },
     { http_status::not_found, "Not Found" },
+    { http_status::method_not_allowed, "Method Not Allowed" },
     { http_status::internal_server_error, "Internal Server Error" },
   };
 

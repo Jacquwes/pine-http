@@ -1,13 +1,14 @@
 #pragma once
 
-#include <unordered_map>
+#include <charconv>
+#include <error.h>
+#include <expected.h>
+#include <http.h>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
-#include "error.h"
-#include "expected.h"
-#include "http.h"
 
 namespace pine
 {
@@ -38,6 +39,14 @@ namespace pine
     static std::expected<http_request, pine::error>
       parse(const std::string& request);
 
+    /// @brief Adds a path parameter to the HTTP request.
+    /// @param name The name of the path parameter.
+    /// @param value The value of the path parameter.
+    void add_path_param(std::string_view name, std::string_view value)
+    {
+      this->path_params.insert_or_assign(std::string(name), value);
+    }
+
     /// @brief Gets the body of the HTTP request.
     /// @return The body of the request.
     constexpr const std::string& get_body() const
@@ -63,6 +72,42 @@ namespace pine
     {
       return this->method;
     }
+
+    /// @brief Gets the value of the specified path parameter from the URI.
+    /// @tparam T The type of the path parameter.
+    /// @param name The name of the path parameter.
+    /// @return The value of the path parameter.
+    template <typename T>
+      requires std::is_integral_v<T> ||
+    std::is_floating_point_v<T> ||
+      std::is_same_v<T, std::string> ||
+      std::is_same_v<T, std::string_view>
+      std::expected<T, error> get_path_param(std::string_view name) const
+    {
+      auto it = this->path_params.find(std::string(name));
+      if (it == this->path_params.end())
+        return std::make_unexpected(
+          error(error_code::parameter_not_found,
+                "Parameter not found: " + std::string(name)));
+
+      if constexpr (std::is_same_v<T, std::string>)
+        return std::string(it->second);
+      else if constexpr (std::is_same_v<T, std::string_view>)
+        return it->second;
+      else
+      {
+        T value;
+        if (std::from_chars(it->second.data(),
+                            it->second.data() + it->second.size(),
+                            value).ec != std::errc{})
+          return std::make_unexpected(
+            error(error_code::invalid_parameter,
+                  "Invalid parameter: " + std::string(name)));
+
+        return value;
+      }
+    }
+
 
     /// @brief Gets the URI of the request.
     /// @return The URI.
@@ -132,5 +177,6 @@ namespace pine
     pine::http_version version = pine::http_version::http_1_1;
     std::map<std::string, std::string> headers;
     std::string body;
+    std::unordered_map<std::string, std::string_view> path_params;
   };
 }

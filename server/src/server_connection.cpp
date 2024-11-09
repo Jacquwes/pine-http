@@ -1,17 +1,56 @@
+#include <WinSock2.h>
 #include <connection.h>
 #include <coroutine.h>
+#include <error.h>
+#include <http.h>
 #include <http_request.h>
 #include <http_response.h>
+#include <server.h>
+#include <server_connection.h>
 #include <string>
-#include <system_error>
-#include <WinSock2.h>
-#include <error.h>
-#include "server_connection.h"
+#include <type_traits>
 
 namespace pine
 {
-  server_connection::server_connection(SOCKET socket) : connection(socket)
+  server_connection::server_connection(SOCKET socket, pine::server& server)
+    : connection(socket)
+    , server(server)
   {}
+
+  async_operation<void>
+    server_connection::handle_request(http_request& request) const
+  {
+    const std::string& path = request.get_uri();
+
+    const auto& [route, found, params] = this->server.routes.find_route_with_params(path);
+
+    http_response response;
+    response.set_header("Connection", "close");
+
+    if (!found)
+    {
+      response.set_header("Content-Type", "text/plain");
+      response.set_status(http_status::not_found);
+      response.set_body("404 Not Found");
+    }
+    else if (route.handlers()[static_cast<size_t>(request.get_method())] == nullptr)
+    {
+      response.set_header("Content-Type", "text/plain");
+      response.set_status(http_status::method_not_allowed);
+      response.set_body("405 Method Not Allowed");
+    }
+    else
+    {
+      for (const auto& [name, value] : params)
+      {
+        request.add_path_param(name, value);
+      }
+
+      route.handle(request, response);
+    }
+
+    co_return co_await this->send_response(response);
+  }
 
   async_operation<http_request>
     pine::server_connection::receive_request() const
@@ -39,7 +78,7 @@ namespace pine
     if (!send_message_result)
       co_return send_message_result.error();
 
-    co_return error(error_code::success);
+    co_return{};
   }
 
   async_operation<void>
@@ -47,17 +86,22 @@ namespace pine
   {
     this->is_connected = true;
 
-    while (is_connected)
+    auto&& request_result = co_await this->receive_request();
+    if (!request_result)
     {
-      const auto& request_result = co_await this->receive_request();
-      if (!request_result)
-      {
-        this->is_connected = false;
-        co_return request_result.error();
-      }
+      this->is_connected = false;
+      co_return request_result.error();
     }
 
+    auto&& request = std::move(request_result.value());
+
+    const auto& response_result = co_await this->handle_request(request);
+
+    this->close();
     this->is_connected = false;
-    co_return error(error_code::success);
+
+    if (!response_result)
+      co_return response_result.error();
+    co_return{};
   }
 }

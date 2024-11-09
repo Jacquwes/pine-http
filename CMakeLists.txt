@@ -4,17 +4,20 @@ project(Pine)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-enable_testing()
-
-find_package(GTest CONFIG REQUIRED)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if (WIN32)
 	add_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
 
 add_subdirectory(client)
-add_subdirectory(examples)
 add_subdirectory(shared)
 add_subdirectory(server)
-add_subdirectory(tests)
+
+if (ENABLE_EXAMPLES)
+	add_subdirectory(examples)
+endif()
+
+if (ENABLE_TESTS)
+		add_subdirectory(tests)
+endif()

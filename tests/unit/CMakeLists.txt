@@ -1,6 +1,3 @@
-include_directories()
-include(GoogleTest)
-
 add_executable(unit_tests)
 
 target_sources(unit_tests
@@ -9,9 +6,12 @@ target_sources(unit_tests
     "http_response_tests.cpp"
     "http_tests.cpp"
     "unit_tests.cpp"
+    "route_tests.cpp"
 )
 
 target_link_libraries(unit_tests PRIVATE shared)
-target_link_libraries(unit_tests PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+target_link_libraries(unit_tests PRIVATE server)
+target_link_libraries(unit_tests PRIVATE doctest::doctest)
 
-gtest_discover_tests(unit_tests)
+include(doctest)
+DOCTEST_DISCOVER_TESTS(unit_tests)
