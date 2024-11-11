@@ -25,6 +25,7 @@ namespace pine
     path_parameter_conflict,
     invalid_parameter,
     parameter_not_found,
+    iocp_error,
   };
 
   class error
