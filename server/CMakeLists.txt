@@ -7,13 +7,14 @@ add_library(server STATIC)
 
 target_sources(server
   PRIVATE
+    "src/iocp.cpp"
     "src/route_node.cpp"
     "src/route_tree.cpp" 
     "src/server.cpp"
     "src/server_connection.cpp"
-    "src/route_node.cpp"
 
   PUBLIC
+    "include/iocp.h"
     "include/route_node.h" 
     "include/route_tree.h"
     "include/route_path.h"
