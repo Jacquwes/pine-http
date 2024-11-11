@@ -51,9 +51,12 @@ namespace pine
   std::expected<SOCKET, pine::error>
     create_socket(const addrinfo* address_info)
   {
-    SOCKET socket = ::socket(address_info->ai_family,
-                             address_info->ai_socktype,
-                             address_info->ai_protocol);
+    SOCKET socket = WSASocket(address_info->ai_family,
+                               address_info->ai_socktype,
+                               address_info->ai_protocol,
+                               nullptr,
+                               0,
+                               WSA_FLAG_OVERLAPPED);
 
     if (socket == INVALID_SOCKET)
     {
