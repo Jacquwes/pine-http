@@ -13,12 +13,13 @@
 namespace pine
 {
   server_connection::server_connection(SOCKET socket, pine::server& server)
-    : connection(socket)
+    : connection(socket, server.iocp_)
     , server(server)
-  {}
+  {
+    post_read();
+  }
 
-  async_operation<void>
-    server_connection::handle_request(http_request& request) const
+  void server_connection::handle_request(http_request& request) const
   {
     const std::string& path = request.get_uri();
 
@@ -49,59 +50,31 @@ namespace pine
       route.handle(request, response);
     }
 
-    co_return co_await this->send_response(response);
+    this->send_response(response);
   }
 
-  async_operation<http_request>
-    pine::server_connection::receive_request() const
-  {
-    const auto& receive_message_result = co_await this->receive_raw_message();
-    if (!receive_message_result)
-      co_return receive_message_result.error();
-
-    const std::string& request_string = receive_message_result.value();
-
-    const auto& request_result = http_request::parse(request_string);
-    if (!request_result)
-      co_return request_result.error();
-
-    co_return request_result.value();
-  }
-
-  async_operation<void>
-    server_connection::send_response(http_response const& response) const
+  void server_connection::send_response(http_response const& response) const
   {
     const std::string& response_string = response.to_string();
-    const auto& send_message_result =
-      co_await this->send_raw_message(response_string);
-
-    if (!send_message_result)
-      co_return send_message_result.error();
-
-    co_return{};
+    post_write(response_string);
   }
 
-  async_operation<void>
-    server_connection::start()
+  void server_connection::on_write()
   {
-    this->is_connected = true;
+    this->close();
 
-    auto&& request_result = co_await this->receive_request();
-    if (!request_result)
-    {
-      this->is_connected = false;
-      co_return request_result.error();
-    }
+    if (auto self = weak_this.lock())
+      self->server.remove_client(self->get_socket());
+  }
+
+
+  void server_connection::on_read(std::string_view request_string)
+  {
+
+    auto request_result = http_request::parse(std::string(request_string));
 
     auto&& request = std::move(request_result.value());
 
-    const auto& response_result = co_await this->handle_request(request);
-
-    this->close();
-    this->is_connected = false;
-
-    if (!response_result)
-      co_return response_result.error();
-    co_return{};
+    handle_request(request);
   }
 }

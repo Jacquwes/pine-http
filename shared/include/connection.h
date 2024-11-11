@@ -3,9 +3,11 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "coroutine.h"
-#include "error.h"
-#include "snowflake.h"
+#include <iocp.h>
+#include <string_view>
+#include <coroutine.h>
+#include <error.h>
+#include <snowflake.h>
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -18,37 +20,46 @@ namespace pine
   class connection
   {
   public:
-    explicit connection(SOCKET socket, snowflake id = snowflake());
+    explicit connection(SOCKET socket, iocp_context& context);
 
     /// @brief Destroy the connection.
     virtual ~connection() = default;
 
-    /// @brief Receive a raw message to the connection.
-    /// @return An asynchronous operation that returns the received bytes.
-    async_operation<std::string>
-      receive_raw_message() const;
+    /// @brief This function is called when a message is received.
+    /// @param message The message that was received.
+    virtual void on_read(std::string_view message) = 0;
 
-    /// @brief Send a raw message to the connection.
-    /// @param raw_message Message to send.
-    /// @return An asynchronous task completed when the message has been sent.
-    async_operation<void>
-      send_raw_message(std::string_view raw_message) const;
+    /// @brief This function is called when a message is sent.
+    virtual void on_write() = 0;
 
+    /// @brief Post a read operation to the thread pool.
+    void post_read();
+
+    /// @brief Post a write operation to the thread pool.
+    /// @param raw_message The message to write.
+    void post_write(std::string_view raw_message) const;
+
+    void on_read_raw(const iocp_operation_data* data);
+    void on_write_raw(const iocp_operation_data* data);
+    
     /// @brief Close the connection.
     void close();
 
-    /// @brief Get the id of the connection.
-    /// @return The id of the connection.
-    constexpr const snowflake&
-      get_id() const noexcept { return id; }
+    constexpr SOCKET get_socket() const
+    {
+      return socket_;
+    }
 
   private:
-    /// @brief The id of the connection.
-    snowflake id;
-
     /// @brief The socket of the connection.
   #ifdef _WIN32
-    SOCKET socket;
+    SOCKET socket_;
   #endif // _WIN32
+
+    iocp_context& context_;
+
+    /// @brief An array of characters to store the message.
+    std::vector<char> message_buffer_;
+    size_t message_size_ = 0;
   };
 }
