@@ -3,7 +3,6 @@
 #include <WinSock2.h>
 #include <coroutine.h>
 #include <cstdint>
-#include <route_node.h>
 #include <error.h>
 #include <expected.h>
 #include <filesystem>
@@ -12,24 +11,27 @@
 #include <http_request.h>
 #include <http_response.h>
 #include <initializer_list>
+#include <iocp.h>
 #include <memory>
 #include <mutex>
-#include <route_tree.h>
 #include <route_node.h>
-#include <string>
+#include <route_path.h>
+#include <route_tree.h>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 #include <ws2def.h>
-#include "route_node.h"
-#include "route_path.h"
 
 namespace pine
 {
+  class iocp_operation_data;
+
   /// @brief A server that accepts connections from clients.
   class server
   {
     friend class server_connection;
+    friend class iocp_context;
 
   public:
     /// @brief Construct a server with the given asio context and port.
@@ -45,8 +47,7 @@ namespace pine
     /// @param client_id Id of the client to disconnect.
     /// @return An asynchronous task completed when the client has been
     /// disconnected.
-    async_operation<void> disconnect_client(
-      uint64_t const& client_id);
+    async_operation<void> remove_client(uint64_t const& client_id);
 
     /// @brief Add a route to the server.
     /// @param path The HTTP path to match in order to call the handler.
@@ -68,7 +69,7 @@ namespace pine
     /// @param location The location to serve files from.
     /// @return 
     route_node& add_static_route(route_path path,
-                               std::filesystem::path&& location);
+                                 std::filesystem::path&& location);
 
     /// @brief Get a route by path and method.
     /// @return If the route was found, a shared pointer to the route.
@@ -83,6 +84,8 @@ namespace pine
     /// @return An asynchronous task completed when the server has stopped
     /// listening.
     std::expected<void, pine::error> accept_clients();
+
+    iocp_context iocp_;
 
     std::mutex delete_clients_mutex;
     std::mutex mutate_clients_mutex;
@@ -102,64 +105,13 @@ namespace pine
     std::jthread acceptor_thread;
     std::jthread delete_clients_thread;
 
-  public:
-    /// @brief Call this function to add a callback that will be executed when
-    /// a new client attempts to connect to the server.
-    /// @return A reference to this server.
-    server&
-      on_connection_attempt(
-        std::function<async_operation<void>(server&,
-                                            std::shared_ptr<server_connection> const&)> const& callback
-      );
+    /// @brief Handle an accept operation.
+    void on_accept(const iocp_operation_data*);
 
-    /// @brief Call this function to add a callback that will be executed when
-    /// a client fails
-    /// to connect to the server.
-    /// @return A reference to this server.
-    server&
-      on_connection_failed(
-        std::function < async_operation<void>(
-          server&,
-          std::shared_ptr<server_connection> const&)> const& callback
-      );
+    /// @brief Handle a read operation.
+    void on_read(const iocp_operation_data*);
 
-    /// @brief Call this function to add a callback that will be executed when
-    /// a client successfully
-    /// connects to the server.
-    /// @return A reference to this server.
-    server&
-      on_connection(std::function < async_operation<void>(
-        server&,
-        std::shared_ptr<server_connection> const&)> const& callback
-      );
-
-    /// @brief Call this function to add a callback that will be executed when
-    /// the server is ready
-    /// to accept connections.
-    /// @return A reference to this server.
-    server&
-      on_ready(std::function < async_operation<void>(
-        server&)> const& callback
-      );
-
-  private:
-    std::vector<std::function<async_operation<void>(
-      server&,
-      std::shared_ptr<server_connection> const&)>
-    > on_connection_attemps_callbacks;
-
-    std::vector<std::function<async_operation<void>(
-      server&,
-      std::shared_ptr<server_connection> const&)>
-    > on_connection_failed_callbacks;
-
-    std::vector<std::function<async_operation<void>(
-      server&,
-      std::shared_ptr<server_connection> const&)>
-    > on_connection_callbacks;
-
-    std::vector < std::function < async_operation<void>(
-      server&)>
-    > on_ready_callbacks;
+    /// @brief Handle a write operation.
+    void on_write(const iocp_operation_data*);
   };
 }
