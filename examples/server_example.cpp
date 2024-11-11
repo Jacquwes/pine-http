@@ -7,7 +7,7 @@
 
 int main()
 {
-  pine::server server;
+  pine::server server("27015");
 
   // Add a route that responds to GET and HEAD requests to the root path.
   // If the path is not valid, the compilation will fail.
