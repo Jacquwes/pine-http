@@ -5,7 +5,6 @@
 #include <array>
 #include <bit>
 #include <cstring>
-#include <server.h>
 #include <iocp.h>
 
 namespace pine
@@ -40,16 +39,21 @@ namespace pine
       {
         using enum iocp_operation;
       case accept:
-        context->server_->on_accept(data);
+        context->on_accept_(data);
         context->post_accept(socket, data->wsa_buffer, data->flags);
         break;
       case read:
-        context->server_->on_read(data);
+        context->on_read_(data);
         break;
-      default:
+      case write:
+        context->on_write_(data);
         break;
       }
+
+      delete data;
     }
+
+    return 0;
   }
 
   iocp_context::iocp_context()
@@ -90,14 +94,19 @@ namespace pine
     return CloseHandle(iocp_);
   }
 
-  void iocp_context::set_server(server* server)
+  bool iocp_context::init_accept_ex(SOCKET socket)
   {
-    server_ = server;
-  }
-
-  void iocp_context::init_accept_ex(SOCKET socket)
-  {
-
+    GUID guid_accept_ex = WSAID_ACCEPTEX;
+    DWORD bytes_received;
+    return WSAIoctl(socket,
+                    SIO_GET_EXTENSION_FUNCTION_POINTER,
+                    &guid_accept_ex,
+                    sizeof(guid_accept_ex),
+                    &accept_ex,
+                    sizeof(accept_ex),
+                    &bytes_received,
+                    nullptr,
+                    nullptr) == 0;
   }
 
   void iocp_context::setup_thread_pool()
@@ -114,33 +123,38 @@ namespace pine
 
   bool iocp_context::post_accept(SOCKET socket, WSABUF wsa_buffer, DWORD flags)
   {
-    SOCKET accept_socket = WSASocketA(AF_INET,
-                                      SOCK_STREAM,
-                                      IPPROTO_TCP,
-                                      nullptr,
-                                      0,
-                                      WSA_FLAG_OVERLAPPED);
+    SOCKET accept_socket = WSASocket(AF_INET,
+                                     SOCK_STREAM,
+                                     IPPROTO_TCP,
+                                     nullptr,
+                                     0,
+                                     WSA_FLAG_OVERLAPPED);
     if (accept_socket == INVALID_SOCKET)
     {
       return false;
     }
 
     auto data = new iocp_operation_data;
+    memset(&data->overlapped, 0, sizeof(data->overlapped));
     data->socket = accept_socket;
     data->operation = iocp_operation::accept;
-    data->wsa_buffer = wsa_buffer;
-    data->flags = flags;
-    memset(&data->overlapped, 0, sizeof(data->overlapped));
 
     DWORD bytes_received;
-    accept_ex(socket,
-              accept_socket,
-              wsa_buffer.buf,
-              wsa_buffer.len - (sizeof(sockaddr_in) + 16),
-              sizeof(sockaddr_in) + 16,
-              sizeof(sockaddr_in) + 16,
-              &bytes_received,
-              &data->overlapped);
+    if (int result = accept_ex(socket,
+                               accept_socket,
+                               data->accept_buffer.data(),
+                               0,
+                               sizeof(sockaddr_in) + 16,
+                               sizeof(sockaddr_in) + 16,
+                               &bytes_received,
+                               &data->overlapped);
+        result == FALSE && WSAGetLastError() != ERROR_IO_PENDING)
+    {
+      delete data;
+      return false;
+    }
+
+    return true;
   }
 
   bool iocp_context::post_read(SOCKET socket, WSABUF wsa_buffer, DWORD flags)
