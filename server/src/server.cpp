@@ -9,6 +9,7 @@
 #include <http_response.h>
 #include <initializer_list>
 #include <iocp.h>
+#include <loguru.hpp>
 #include <memory>
 #include <route_node.h>
 #include <route_path.h>
@@ -54,12 +55,21 @@ namespace pine
 
     is_listening = true;
 
-    iocp_.init_accept_ex(server_socket);
+    LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
+
+    iocp_.init(server_socket);
+    iocp_.set_on_accept(std::bind(&server::on_accept, this, std::placeholders::_1));
+    iocp_.set_on_read(std::bind(&server::on_read, this, std::placeholders::_1));
+    iocp_.set_on_write(std::bind(&server::on_write, this, std::placeholders::_1));
     iocp_.associate(server_socket);
+
+    LOG_F(INFO, "IOCP initialized.");
 
     if (const auto& accept_result = accept_clients();
         !accept_result)
       return std::make_unexpected(accept_result.error());
+
+    LOG_F(INFO, "Accepting clients.");
 
     return {};
   }
@@ -67,6 +77,8 @@ namespace pine
   void server::stop()
   {
     is_listening = false;
+
+    LOG_F(INFO, "Stopping server.");
 
     close_socket(server_socket);
 
@@ -78,12 +90,17 @@ namespace pine
     }
 
     clients.clear();
+
+    LOG_F(INFO, "Server stopped.");
   }
 
   std::expected<void, error> server::accept_clients()
   {
     // Post 10 accept operations so there is no delay starting a new thread
     // when a client connects.
+
+    LOG_F(INFO, "Posting 10 accept operations.");
+
     for (size_t i = 0; i < 10; i++)
     {
       if (!iocp_.post(iocp_operation::accept, server_socket, {}, 0))
@@ -123,6 +140,8 @@ namespace pine
                             std::make_unique<route_tree::handler_type>(handler));
     }
 
+    LOG_F(INFO, "Added route: %s", path.get().data());
+
     return new_route;
   }
 
@@ -133,6 +152,8 @@ namespace pine
     auto& new_route = routes.add_route(path);
 
     new_route.serve_files(std::move(location));
+
+    LOG_F(INFO, "Added static route: %s", path.get().data());
 
     return new_route;
   }

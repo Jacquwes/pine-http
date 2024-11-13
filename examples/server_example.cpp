@@ -3,10 +3,15 @@
 #include <filesystem>
 #include <iostream>
 
+#include <loguru.hpp>
 #include <server.h>
 
-int main()
+int main(int argc, char** argv)
 {
+  loguru::init(argc, argv);
+  loguru::g_stderr_verbosity = 1;
+
+  // Create a server on port 27015.
   pine::server server("27015");
 
   // Add a route that responds to GET and HEAD requests to the root path.
@@ -60,11 +65,11 @@ int main()
   // Start the server
   if (auto server_result = server.start(); !server_result)
   {
-    std::cerr << "Error: " << server_result.error().message() << std::endl;
+    LOG_F(ERROR, "Failed to start server: %s", server_result.error().message().c_str());
     return 1;
   }
 
-  std::cout << "Server started." << std::endl;
+  LOG_F(INFO, "Server started on port 27015");
 
   while (true)
   {

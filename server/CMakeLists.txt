@@ -23,3 +23,4 @@ target_sources(server
 target_include_directories(server PUBLIC include)
 
 target_link_libraries(server PRIVATE shared)
+target_link_libraries(server PRIVATE loguru::loguru)

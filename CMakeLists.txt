@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(loguru CONFIG REQUIRED)
+
 if (WIN32)
 	add_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
