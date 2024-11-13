@@ -98,11 +98,18 @@ namespace pine
       on_write_ = on_write;
     }
 
-    bool init_accept_ex(SOCKET socket);
+    inline void init(SOCKET socket)
+    {
+      setup_thread_pool(socket);
+      init_accept_ex(socket);
+    }
+
 
   private:
     /// @brief The IOCP handle.
     HANDLE iocp_;
+
+    thread_data data;
 
     std::function<void(const iocp_operation_data*)> on_accept_;
     std::function<void(const iocp_operation_data*)> on_read_;
@@ -113,7 +120,8 @@ namespace pine
 
     static DWORD WINAPI worker_thread(LPVOID lpParam);
 
-    void setup_thread_pool();
+    void setup_thread_pool(SOCKET socket);
+    bool init_accept_ex(SOCKET socket);
 
     bool post_accept(SOCKET socket, WSABUF wsa_buffer, DWORD flags);
     bool post_read(SOCKET socket, WSABUF wsa_buffer, DWORD flags);

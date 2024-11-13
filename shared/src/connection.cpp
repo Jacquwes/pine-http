@@ -2,13 +2,14 @@
 #include <WinSock2.h>
 #endif // _WIN32
 #include <array>
-#include <iostream>
-#include <string>
-#include <string_view>
-#include <system_error>
 #include <connection.h>
 #include <coroutine.h>
 #include <error.h>
+#include <iostream>
+#include <loguru.hpp>
+#include <string>
+#include <string_view>
+#include <system_error>
 #include <vector>
 
 namespace pine
@@ -17,7 +18,7 @@ namespace pine
     : socket_(socket),
     context_(context)
   {
-    std::cout << "[Connection] New connection: " << socket << std::endl;
+    LOG_F(1, "Connection created: %d", socket_);
   }
 
   void connection::on_read_raw(const iocp_operation_data* data)
@@ -25,13 +26,18 @@ namespace pine
     message_size_ += data->bytes_transferred;
 
     if (message_size_ == 1024)
+    {
+      LOG_F(INFO, "Connection %d received partial message", get_socket());
       post_read();
+    }
     else
     {
       std::string_view message{ message_buffer_.data(),
                                 message_buffer_.size() };
 
       on_read(message);
+
+      LOG_F(INFO, "Connection %d received message of size %d", get_socket(), message.size());
 
       message_buffer_.clear();
       message_size_ = 0;
@@ -40,6 +46,8 @@ namespace pine
 
   void connection::on_write_raw(const iocp_operation_data*)
   {
+    LOG_F(INFO, "Connection %d wrote message", get_socket());
+
     on_write();
   }
 
