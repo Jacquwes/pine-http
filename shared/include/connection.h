@@ -23,7 +23,7 @@ namespace pine
     explicit connection(SOCKET socket, iocp_context& context);
 
     /// @brief Destroy the connection.
-    virtual ~connection() = default;
+    virtual ~connection();
 
     /// @brief This function is called when a message is received.
     /// @param message The message that was received.

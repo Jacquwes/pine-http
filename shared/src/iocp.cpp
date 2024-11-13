@@ -36,8 +36,8 @@ namespace pine
       {
         LOG_F(ERROR, "Worker thread failed to get completion status: %d\n"
               "\tiocp\t = %d\n"
-              "\tsocket\t = %d", 
-              GetLastError(), iocp, socket );
+              "\tsocket\t = %d",
+              GetLastError(), iocp, socket);
         break;
       }
 
@@ -132,6 +132,7 @@ namespace pine
                               nullptr);
         result == 0)
     {
+      LOG_F(1, "AcceptEx initialized");
       return true;
     }
     else
@@ -166,8 +167,11 @@ namespace pine
                                      WSA_FLAG_OVERLAPPED);
     if (accept_socket == INVALID_SOCKET)
     {
+      LOG_F(WARNING, "Failed to create accept socket");
       return false;
     }
+
+    LOG_F(1, "Accept socket created: %d", accept_socket);
 
     auto data = new iocp_operation_data;
     memset(&data->overlapped, 0, sizeof(data->overlapped));
@@ -231,12 +235,12 @@ namespace pine
     memset(&data->overlapped, 0, sizeof(data->overlapped));
     DWORD bytes_sent;
     if (int result = WSASend(socket,
-            &wsa_buffer,
-            1,
-            &bytes_sent,
-            flags,
-            &data->overlapped,
-            nullptr);
+                             &wsa_buffer,
+                             1,
+                             &bytes_sent,
+                             flags,
+                             &data->overlapped,
+                             nullptr);
         result == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING)
     {
       LOG_F(WARNING, "Failed to post WSASend: %d", WSAGetLastError());

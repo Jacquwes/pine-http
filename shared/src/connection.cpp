@@ -21,9 +21,14 @@ namespace pine
     LOG_F(1, "Connection created: %d", socket_);
   }
 
+  connection::~connection()
+  {
+    LOG_F(1, "Connection destroyed: %d", socket_);
+  }
+
   void connection::on_read_raw(const iocp_operation_data* data)
   {
-    message_size_ += data->bytes_transferred;
+    message_size_ += data->wsa_buffer.len;
 
     if (message_size_ == 1024)
     {
@@ -78,5 +83,7 @@ namespace pine
     closesocket(this->socket_);
 
     this->socket_ = INVALID_SOCKET;
+
+    LOG_F(INFO, "Connection %d closed", get_socket());
   }
 }

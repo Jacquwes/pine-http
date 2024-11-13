@@ -140,7 +140,7 @@ namespace pine
                             std::make_unique<route_tree::handler_type>(handler));
     }
 
-    LOG_F(INFO, "Added route: %s", path.get());
+    LOG_F(INFO, "Added route: %s", path.get().data());
 
     return new_route;
   }
@@ -153,7 +153,7 @@ namespace pine
 
     new_route.serve_files(std::move(location));
 
-    LOG_F(INFO, "Added static route: %s", path.get());
+    LOG_F(INFO, "Added static route: %s", path.get().data());
 
     return new_route;
   }
