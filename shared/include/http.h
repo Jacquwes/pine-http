@@ -104,7 +104,7 @@ namespace pine
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the headers start.
     /// @return The extracted headers as a map of key-value pairs.
-    std::expected<std::unordered_map<std::string, std::string_view>, pine::error>
+    std::expected<std::unordered_map<std::string, std::string>, pine::error>
       try_get_headers(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract a single header from an HTTP request.
