@@ -58,9 +58,9 @@ namespace pine
     LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
 
     iocp_.init(server_socket);
-    iocp_.set_on_accept(std::bind(&server::on_accept, this, std::placeholders::_1));
-    iocp_.set_on_read(std::bind(&server::on_read, this, std::placeholders::_1));
-    iocp_.set_on_write(std::bind(&server::on_write, this, std::placeholders::_1));
+    iocp_.set_on_accept([this](const pine::iocp_operation_data* data) { on_accept(data); });
+    iocp_.set_on_read([this](const pine::iocp_operation_data* data) { on_read(data); });
+    iocp_.set_on_write([this](const pine::iocp_operation_data* data) { on_write(data); });
     iocp_.associate(server_socket);
 
     LOG_F(INFO, "IOCP initialized.");
