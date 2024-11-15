@@ -55,6 +55,7 @@ namespace pine
         using enum iocp_operation;
       case accept:
         LOG_F(1, "Worker thread accepted a connection");
+        context->associate(data->socket);
         context->on_accept_(data);
         context->post_accept(socket, data->wsa_buffer, data->flags);
         break;

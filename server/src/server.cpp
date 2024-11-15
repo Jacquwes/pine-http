@@ -174,8 +174,6 @@ namespace pine
 
     // Client will clean itself up when it is done.
     clients[data->socket] = client;
-
-    iocp_.associate(client_socket);
   }
 
   void server::on_read(const iocp_operation_data* data)
