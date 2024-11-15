@@ -29,7 +29,7 @@ namespace pine
     explicit http_request(pine::http_method method,
                           std::string_view _viewuri,
                           pine::http_version version,
-                          const std::map<std::string, std::string_view>& headers,
+                          const std::unordered_map<std::string, std::string_view>& headers,
                           std::string_view _viewbody);
 
     /// @brief Parses an HTTP request from a string.
@@ -61,7 +61,7 @@ namespace pine
 
     /// @brief Gets the headers of the HTTP request.
     /// @return The headers of the request.
-    constexpr const std::map<std::string, std::string_view>& get_headers() const
+    constexpr const std::unordered_map<std::string, std::string_view>& get_headers() const
     {
       return this->headers;
     }
@@ -175,7 +175,7 @@ namespace pine
     pine::http_method method = pine::http_method::get;
     std::string uri;
     pine::http_version version = pine::http_version::http_1_1;
-    std::map<std::string, std::string_view> headers;
+    std::unordered_map<std::string, std::string_view> headers;
     std::string body;
     std::unordered_map<std::string, std::string_view> path_params;
   };

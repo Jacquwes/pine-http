@@ -56,10 +56,10 @@ namespace pine::http_utils
     return std::make_pair(name, value);
   }
 
-  std::expected<std::map<std::string, std::string_view>, pine::error>
+  std::expected<std::unordered_map<std::string, std::string_view>, pine::error>
     try_get_headers(std::string_view request, size_t& offset)
   {
-    std::map<std::string, std::string_view> result;
+    std::unordered_map<std::string, std::string_view> result;
 
     while (true)
     {
