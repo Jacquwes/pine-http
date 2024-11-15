@@ -39,13 +39,6 @@ namespace pine
 
     message_size_ += bytes_transferred;
 
-    if (message_size_ == 1024)
-    {
-      LOG_F(INFO, "Connection %zu received partial message", get_socket());
-      post_read();
-    }
-    else
-    {
       std::string_view message{ message_buffer_.data(),
                                 message_buffer_.size() };
 
@@ -55,6 +48,8 @@ namespace pine
 
       message_buffer_.clear();
       message_size_ = 0;
+
+    post_read();
     }
 
   void connection::on_write_raw(const iocp_operation_data* data)
