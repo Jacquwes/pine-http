@@ -28,7 +28,16 @@ namespace pine
 
   void connection::on_read_raw(const iocp_operation_data* data)
   {
-    message_size_ += data->wsa_buffer.len;
+    DWORD bytes_transferred = data->bytes_transferred;
+
+    if (bytes_transferred == 0)
+    {
+      LOG_F(1, "Connection %zu closed", get_socket());
+      close();
+      return;
+    }
+
+    message_size_ += bytes_transferred;
 
     if (message_size_ == 1024)
     {
@@ -51,7 +60,7 @@ namespace pine
 
   void connection::on_write_raw(const iocp_operation_data*)
   {
-    LOG_F(INFO, "Connection %d wrote message", get_socket());
+    LOG_F(INFO, "Connection %zu wrote message", get_socket());
 
     on_write();
   }
@@ -60,8 +69,8 @@ namespace pine
   {
     message_buffer_.resize(message_size_ + 1024);
     WSABUF wsa_buffer{};
-    wsa_buffer.buf = message_buffer_.data();
-    wsa_buffer.len = static_cast<ULONG>(message_buffer_.size());
+    wsa_buffer.buf = message_buffer_.data() + message_size_;
+    wsa_buffer.len = 1024;
     if (!context_.post(iocp_operation::read, socket_, wsa_buffer, 0))
     {
       LOG_F(WARNING, "Failed to post read operation: %d", WSAGetLastError());
