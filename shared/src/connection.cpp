@@ -56,10 +56,18 @@ namespace pine
       message_buffer_.clear();
       message_size_ = 0;
     }
+
+  void connection::on_write_raw(const iocp_operation_data* data)
+  {
+    write_pending = false;
+
+    if (data->bytes_transferred == 0)
+    {
+      LOG_F(WARNING, "Connection %zu failed to write message", get_socket());
+      close();
+      return;
   }
 
-  void connection::on_write_raw(const iocp_operation_data*)
-  {
     LOG_F(INFO, "Connection %zu wrote message", get_socket());
 
     on_write();
@@ -77,7 +85,7 @@ namespace pine
     }
   }
 
-  void connection::post_write(std::string_view raw_message) const
+  void connection::post_write(std::string_view raw_message)
   {
     if (raw_message.empty())
       return;
@@ -87,6 +95,8 @@ namespace pine
     wsa_buffer.len = static_cast<ULONG>(raw_message.size());
 
     context_.post(iocp_operation::write, socket_, wsa_buffer, 0);
+
+    write_pending = true;
   }
 
   void connection::close()

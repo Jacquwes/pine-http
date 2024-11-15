@@ -36,7 +36,7 @@ namespace pine
 
     /// @brief Post a write operation to the thread pool.
     /// @param raw_message The message to write.
-    void post_write(std::string_view raw_message) const;
+    void post_write(std::string_view raw_message);
 
     void on_read_raw(const iocp_operation_data* data);
     void on_write_raw(const iocp_operation_data* data);
@@ -48,6 +48,9 @@ namespace pine
     {
       return socket_;
     }
+
+  protected:
+    std::atomic<bool> write_pending = false;
 
   private:
     /// @brief The socket of the connection.
