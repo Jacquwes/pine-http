@@ -28,7 +28,7 @@ target_sources(shared
     
     
     "src/wsa.cpp"
-)
+ "include/thread_pool.h" "src/thread_pool.cpp")
 
 target_include_directories(shared PUBLIC include)
 
