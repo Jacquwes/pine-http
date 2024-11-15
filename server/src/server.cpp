@@ -125,14 +125,17 @@ namespace pine
   {
     std::unique_lock lock{ mutate_clients_mutex };
 
-    if (const auto& client = clients.find(client_id);
-        client == clients.end())
+    const auto& it = clients.find(client_id);
+    if (it == clients.end())
     {
       co_return error(error_code::client_not_found,
                       "The client was not found.");
     }
-    else
-      clients.erase(client);
+
+    auto& client = it->second;
+    clients.erase(it);
+
+    client->close();
 
     co_return{};
   }
@@ -186,7 +189,6 @@ namespace pine
     const auto& client_socket = data->socket;
     const auto& client = std::make_shared<server_connection>(client_socket,
                                                              *this);
-    client->weak_this = client;
 
     // Client will clean itself up when it is done.
     clients[data->socket] = client;
@@ -194,17 +196,25 @@ namespace pine
 
   void server::on_read(const iocp_operation_data* data)
   {
+    std::lock_guard lock{ mutate_clients_mutex };
+    
     const auto& client = clients.find(data->socket);
     if (client == clients.end())
       return;
-    client->second->on_read_raw(data);
+    if (auto connection = client->second;
+        connection)
+      connection->on_read_raw(data);
   }
 
   void server::on_write(const iocp_operation_data* data)
   {
+    std::lock_guard lock{ mutate_clients_mutex };
+
     const auto& client = clients.find(data->socket);
     if (client == clients.end())
       return;
-    client->second->on_write_raw(data);
+    if (auto connection = client->second;
+        connection)
+      connection->on_write_raw(data);
   }
 }

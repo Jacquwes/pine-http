@@ -30,7 +30,7 @@ namespace pine
     handler(request, response);
   }
 
-  void server_connection::handle_request(http_request& request) const
+  void server_connection::handle_request(http_request& request)
   {
     std::string_view path = request.get_uri();
 
@@ -60,23 +60,29 @@ namespace pine
     this->send_response(response);
   }
 
-  void server_connection::send_response(http_response const& response) const
+  void server_connection::send_response(http_response const& response)
   {
+    auto self = shared_from_this();
+
     const std::string& response_string = response.to_string();
     post_write(response_string);
   }
 
   void server_connection::on_write()
   {
+    auto self = shared_from_this();
 
-    if (auto self = weak_this.lock())
+    if (pending_close)
     {
-      auto socket = self->get_socket();
-      if (socket != INVALID_SOCKET)
+      if (!write_pending)
       {
         self->server.remove_client(self->get_socket());
         this->close();
       }
+    }
+    else if (is_reading)
+    {
+      post_read();
     }
   }
 
@@ -97,5 +103,15 @@ namespace pine
     auto&& request = std::move(request_result.value());
 
     handle_request(request);
+  }
+
+  void server_connection::close()
+  {
+    is_reading = false;
+    pending_close = true;
+    if (!write_pending)
+    {
+      connection::close();
+    }
   }
 }

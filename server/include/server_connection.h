@@ -1,12 +1,9 @@
 #pragma once
 
 #include <connection.h>
-#include <coroutine.h>
 #include <http_request.h>
 #include <http_response.h>
-#include <iocp.h>
 #include <memory>
-#include <system_error>
 
 namespace pine
 {
@@ -14,7 +11,8 @@ namespace pine
 
   /// @brief A connection to a client.
   class server_connection
-    : public connection
+    : public connection,
+    public std::enable_shared_from_this<server_connection>
   {
     friend class server;
 
@@ -24,7 +22,7 @@ namespace pine
 
     void handle_error(http_status status, const http_request& request, http_response& response) const;
 
-    void handle_request(http_request& request) const;
+    void handle_request(http_request& request);
 
     /// @brief Handle a read operation.
     /// @param data The data to read.
@@ -37,16 +35,15 @@ namespace pine
     /// @brief Send an HTTP response.
     /// @param response The response to send.
     /// @return An asynchronous task completed when the response has been sent.
-    void send_response(http_response const& response) const;
+    void send_response(http_response const& response);
 
-    /// @brief Start listening for messages from the client.
-    /// @return An asynchronous task completed when the connection has been closed.
-    void start();
+    void close() override;
 
   private:
     /// @brief The server that the connection is connected to.
     server& server;
 
-    std::weak_ptr<server_connection> weak_this;
+    std::atomic<bool> is_reading = true;
+    std::atomic<bool> pending_close = false;
   };
 }
