@@ -43,7 +43,8 @@ namespace pine
     const auto& headers_result = http_utils::try_get_headers(request, offset);
     if (!headers_result)
       return std::make_unexpected(headers_result.error());
-    result.headers = headers_result.value();
+    for (const auto& [name, value] : headers_result.value())
+      result.headers.insert_or_assign(name, value);
 
     if (offset < request.size())
     {
