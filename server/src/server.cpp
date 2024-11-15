@@ -186,6 +186,7 @@ namespace pine
     const auto& client_socket = data->socket;
     const auto& client = std::make_shared<server_connection>(client_socket,
                                                              *this);
+    client->weak_this = client;
 
     // Client will clean itself up when it is done.
     clients[data->socket] = client;

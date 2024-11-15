@@ -17,6 +17,8 @@ namespace pine
     : public connection
     , public std::enable_shared_from_this<server_connection>
   {
+    friend class server;
+
   public:
     /// @brief Construct a server connection with the given socket and server.
     explicit server_connection(SOCKET socket, pine::server& server);
