@@ -26,7 +26,17 @@ namespace pine
   server::server(const char* port)
     : iocp_{},
     port{ port }
-  {}
+  {
+    for (const auto& [status_code, status_string] : http_status_strings)
+    {
+      error_handlers[status_code] =
+        [&status_string, &status_code](const auto&, auto& res)
+        {
+          res.set_body(status_string);
+          res.set_status(status_code);
+        };
+    }
+  }
 
   std::expected<void, error> server::start()
   {
@@ -156,6 +166,11 @@ namespace pine
     LOG_F(INFO, "Added static route: %s", path.get().data());
 
     return new_route;
+  }
+
+  void server::add_error_handler(http_status status, callback_function&& callback)
+  {
+    error_handlers[status] = std::move(callback);
   }
 
   const route_node&

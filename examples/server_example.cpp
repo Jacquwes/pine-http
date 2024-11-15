@@ -14,6 +14,13 @@ int main(int argc, char** argv)
   // Create a server on port 27015.
   pine::server server("27015");
 
+  server.add_error_handler(pine::http_status::not_found,
+                           [](const pine::http_request&,
+                              pine::http_response& response)
+                           {
+                             response.set_body("This page does not exist.");
+                           });
+
   // Add a route that responds to GET and HEAD requests to the root path.
   // If the path is not valid, the compilation will fail.
   server.add_route("/",

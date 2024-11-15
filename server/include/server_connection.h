@@ -21,6 +21,8 @@ namespace pine
     /// @brief Construct a server connection with the given socket and server.
     explicit server_connection(SOCKET socket, pine::server& server);
 
+    void handle_error(http_status status, const http_request& request, http_response& response) const;
+
     void handle_request(http_request& request) const;
 
     /// @brief Handle a read operation.
