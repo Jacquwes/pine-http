@@ -23,7 +23,7 @@ namespace pine
 
   connection::~connection()
   {
-    LOG_F(1, "Connection destroyed: %zu", socket_);
+    this->close();
   }
 
   void connection::on_read_raw(const iocp_operation_data* data)
