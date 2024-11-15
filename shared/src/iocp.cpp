@@ -157,10 +157,10 @@ namespace pine
     SYSTEM_INFO system_info;
     GetSystemInfo(&system_info);
 
-    data = { iocp_, socket, this };
+    auto thread_args = new thread_data{ iocp_, socket, this };
     for (DWORD i = 0; i < system_info.dwNumberOfProcessors; i++)
     {
-      std::thread(worker_thread, &data).detach();
+      std::thread(worker_thread, thread_args).detach();
       //CreateThread(nullptr, 0, worker_thread, &data, 0, nullptr);
     }
 
