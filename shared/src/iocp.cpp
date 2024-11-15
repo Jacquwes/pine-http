@@ -49,6 +49,8 @@ namespace pine
       }
 
       auto data = CONTAINING_RECORD(overlapped, iocp_operation_data, overlapped);
+      data->bytes_transferred = bytes_transferred;
+      data->overlapped = *overlapped;
 
       switch (data->operation)
       {
