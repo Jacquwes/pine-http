@@ -11,7 +11,6 @@ target_sources(server
     "src/route_tree.cpp" 
     "src/server.cpp"
     "src/server_connection.cpp"
-    "src/route_node.cpp"
 
   PUBLIC
     "include/route_node.h" 
@@ -24,3 +23,4 @@ target_sources(server
 target_include_directories(server PUBLIC include)
 
 target_link_libraries(server PRIVATE shared)
+target_link_libraries(server PRIVATE loguru::loguru)

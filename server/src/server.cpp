@@ -8,6 +8,8 @@
 #include <http_request.h>
 #include <http_response.h>
 #include <initializer_list>
+#include <iocp.h>
+#include <loguru.hpp>
 #include <memory>
 #include <route_node.h>
 #include <route_path.h>
@@ -22,7 +24,8 @@
 namespace pine
 {
   server::server(const char* port)
-    : port(port)
+    : iocp_{},
+    port{ port }
   {}
 
   std::expected<void, error> server::start()
@@ -34,15 +37,15 @@ namespace pine
     const auto& get_address_result = get_address_info(nullptr, port);
     if (!get_address_result)
       return std::make_unexpected(get_address_result.error());
-    this->address_info = get_address_result.value();
+    address_info = get_address_result.value();
 
-    const auto& socket_result = create_socket(this->address_info);
+    const auto& socket_result = create_socket(address_info);
     if (!socket_result)
       return std::make_unexpected(socket_result.error());
-    this->server_socket = socket_result.value();
+    server_socket = socket_result.value();
 
     if (const auto& bind_result = bind_socket(server_socket,
-                                              this->address_info);
+                                              address_info);
         !bind_result)
       return std::make_unexpected(bind_result.error());
 
@@ -50,11 +53,23 @@ namespace pine
         !listen_result)
       return std::make_unexpected(listen_result.error());
 
-    this->is_listening = true;
+    is_listening = true;
 
-    if (const auto& accept_result = this->accept_clients();
+    LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
+
+    iocp_.init(server_socket);
+    iocp_.set_on_accept(std::bind(&server::on_accept, this, std::placeholders::_1));
+    iocp_.set_on_read(std::bind(&server::on_read, this, std::placeholders::_1));
+    iocp_.set_on_write(std::bind(&server::on_write, this, std::placeholders::_1));
+    iocp_.associate(server_socket);
+
+    LOG_F(INFO, "IOCP initialized.");
+
+    if (const auto& accept_result = accept_clients();
         !accept_result)
       return std::make_unexpected(accept_result.error());
+
+    LOG_F(INFO, "Accepting clients.");
 
     return {};
   }
@@ -63,83 +78,51 @@ namespace pine
   {
     is_listening = false;
 
-    close_socket(this->server_socket);
+    LOG_F(INFO, "Stopping server.");
 
-    delete this->address_info;
+    close_socket(server_socket);
 
-    for (const auto& [id, client] : this->clients)
+    delete address_info;
+
+    for (const auto& [id, client] : clients)
     {
       client->close();
     }
 
-    this->clients.clear();
+    clients.clear();
+
+    LOG_F(INFO, "Server stopped.");
   }
 
   std::expected<void, error> server::accept_clients()
   {
-    for (const auto& callback : on_ready_callbacks)
+    // Post 10 accept operations so there is no delay starting a new thread
+    // when a client connects.
+
+    LOG_F(INFO, "Posting 10 accept operations.");
+
+    for (size_t i = 0; i < 10; i++)
     {
-      callback(*this);
-    }
-
-    while (this->is_listening)
-    {
-      const auto& accept_socket_result = accept_socket(this->server_socket,
-                                                       this->address_info);
-      if (!accept_socket_result)
-      {
-        for (const auto& callback : this->on_connection_failed_callbacks)
-        {
-          callback(*this, nullptr);
-        }
-        continue;
-      }
-
-      const auto& client_socket = accept_socket_result.value();
-      const auto& client = std::make_shared<server_connection>(client_socket,
-                                                               *this);
-
-      for (const auto& callback : this->on_connection_attemps_callbacks)
-      {
-        callback(*this, client);
-      }
-
-      std::unique_lock lock{ mutate_clients_mutex };
-
-      this->clients[client->get_id()] = client;
-
-      for (const auto& callback : this->on_connection_callbacks)
-      {
-        callback(*this, client);
-      }
-
-      if (const auto& start_result = client->start().await_resume();
-          !start_result)
-      {
-        this->clients.erase(client->get_id());
-      }
-
-      lock.unlock();
+      if (!iocp_.post(iocp_operation::accept, server_socket, {}, 0))
+        return std::make_unexpected(error(error_code::iocp_error,
+                                          "Failed to post accept operation: " + std::to_string(WSAGetLastError())));
     }
 
     return {};
   }
 
-  async_operation<void> server::disconnect_client(uint64_t const& client_id)
+  async_operation<void> server::remove_client(uint64_t const& client_id)
   {
     std::unique_lock lock{ mutate_clients_mutex };
 
-    const auto& client = clients.find(client_id);
-
-    if (client == clients.end())
+    if (const auto& client = clients.find(client_id);
+        client == clients.end())
     {
       co_return error(error_code::client_not_found,
                       "The client was not found.");
     }
-
-    client->second->close();
-
-    clients.erase(client_id);
+    else
+      clients.erase(client);
 
     co_return{};
   }
@@ -157,16 +140,20 @@ namespace pine
                             std::make_unique<route_tree::handler_type>(handler));
     }
 
+    LOG_F(INFO, "Added route: %s", path.get().data());
+
     return new_route;
   }
 
   route_node& server::add_static_route(route_path path,
-                                     std::filesystem::path&&
-                                     location)
+                                       std::filesystem::path&&
+                                       location)
   {
     auto& new_route = routes.add_route(path);
 
     new_route.serve_files(std::move(location));
+
+    LOG_F(INFO, "Added static route: %s", path.get().data());
 
     return new_route;
   }
@@ -177,42 +164,31 @@ namespace pine
     return routes.find_route(path);
   }
 
-  server& server::on_connection_attempt(
-    std::function<
-    async_operation<void>
-    (server&, std::shared_ptr<server_connection>const&)
-    > const& callback)
+  void server::on_accept(const iocp_operation_data* data)
   {
-    on_connection_attemps_callbacks.push_back(callback);
-    return *this;
+    std::unique_lock lock{ mutate_clients_mutex };
+
+    const auto& client_socket = data->socket;
+    const auto& client = std::make_shared<server_connection>(client_socket,
+                                                             *this);
+
+    // Client will clean itself up when it is done.
+    clients[data->socket] = client;
   }
 
-  server& server::on_connection_failed(
-    std::function<
-    async_operation<void>
-    (server&, std::shared_ptr<server_connection>const&)
-    > const& callback)
+  void server::on_read(const iocp_operation_data* data)
   {
-    on_connection_failed_callbacks.push_back(callback);
-    return *this;
+    const auto& client = clients.find(data->socket);
+    if (client == clients.end())
+      return;
+    client->second->on_read_raw(data);
   }
 
-  server& server::on_connection(
-    std::function<
-    async_operation<void>
-    (server&, std::shared_ptr<server_connection>const&)
-    > const& callback)
+  void server::on_write(const iocp_operation_data* data)
   {
-    on_connection_callbacks.push_back(callback);
-    return *this;
-  }
-
-  server& server::on_ready(
-    std::function<
-    async_operation<void>
-    (server&)> const& callback)
-  {
-    on_ready_callbacks.push_back(callback);
-    return *this;
+    const auto& client = clients.find(data->socket);
+    if (client == clients.end())
+      return;
+    client->second->on_write_raw(data);
   }
 }

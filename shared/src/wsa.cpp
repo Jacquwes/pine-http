@@ -6,8 +6,9 @@
 #include <expected.h>
 #include <string>
 #include <ws2def.h>
-#include "error.h"
-#include "wsa.h"
+#include <error.h>
+#include <wsa.h>
+#include <loguru.hpp>
 
 namespace pine
 {
@@ -17,9 +18,12 @@ namespace pine
     if (int result = WSAStartup(MAKEWORD(2, 2), &wsa_data);
         result != 0)
     {
+      LOG_F(ERROR, "Failed to init WSA: %d", result);
       return std::make_unexpected(error(error_code::winsock_error,
                                         std::to_string(result)));
     }
+
+    LOG_F(1, "WSA initialized: %s", wsa_data.szDescription);
 
     return {};
   }
@@ -41,9 +45,12 @@ namespace pine
     if (int error = getaddrinfo(node, service, &hints, &result);
         error != 0)
     {
+      LOG_F(ERROR, "Failed to get address info: %d", error);
       return std::make_unexpected(pine::error(error_code::getaddrinfo_error,
                                               std::to_string(error)));
     }
+
+    LOG_F(1, "Address info obtained");
 
     return result;
   }
@@ -51,16 +58,22 @@ namespace pine
   std::expected<SOCKET, pine::error>
     create_socket(const addrinfo* address_info)
   {
-    SOCKET socket = ::socket(address_info->ai_family,
-                             address_info->ai_socktype,
-                             address_info->ai_protocol);
+    SOCKET socket = WSASocket(address_info->ai_family,
+                              address_info->ai_socktype,
+                              address_info->ai_protocol,
+                              nullptr,
+                              0,
+                              WSA_FLAG_OVERLAPPED);
 
     if (socket == INVALID_SOCKET)
     {
+      LOG_F(ERROR, "Failed to open socket: %d", WSAGetLastError());
       return std::make_unexpected(error(error_code::winsock_error,
                                         std::to_string(WSAGetLastError())));
 
     }
+    
+    LOG_F(INFO, "Listen socket created: %d", socket);
 
     return socket;
   }
@@ -73,9 +86,12 @@ namespace pine
              static_cast<int>(address_info->ai_addrlen))
         == SOCKET_ERROR)
     {
+      LOG_F(ERROR, "Failed to bind socket: %d", WSAGetLastError());
       return std::make_unexpected(error(error_code::winsock_error,
                                         std::to_string(WSAGetLastError())));
     }
+
+    LOG_F(1, "Lisent socket bound");
 
     return {};
   }
@@ -85,9 +101,12 @@ namespace pine
   {
     if (listen(socket, backlog) == SOCKET_ERROR)
     {
+      LOG_F(ERROR, "Failed to listen on socket: %d", WSAGetLastError());
       return std::make_unexpected(error(error_code::winsock_error,
                                         std::to_string(WSAGetLastError())));
     }
+
+    LOG_F(1, "Listen socket listening");
 
     return {};
   }
@@ -99,9 +118,12 @@ namespace pine
 
     if (accepted_socket == INVALID_SOCKET)
     {
+      LOG_F(ERROR, "Failed to accept socket: %d", WSAGetLastError());
       return std::make_unexpected(error(error_code::winsock_error,
                                         std::to_string(WSAGetLastError())));
     }
+
+    LOG_F(1, "Socket accepted: %d", accepted_socket);
 
     return accepted_socket;
   }
@@ -114,9 +136,12 @@ namespace pine
                 static_cast<int>(address_info->ai_addrlen))
         == SOCKET_ERROR)
     {
+      LOG_F(ERROR, "Failed to connect socket: %d", WSAGetLastError());
       return std::make_unexpected(error(error_code::winsock_error,
                                         std::to_string(WSAGetLastError())));
     }
+
+    LOG_F(1, "Socket connected: %d", socket);
 
     return {};
   }
@@ -124,5 +149,7 @@ namespace pine
   void close_socket(SOCKET socket)
   {
     closesocket(socket);
+
+    LOG_F(1, "Socket closed: %d", socket);
   }
 }

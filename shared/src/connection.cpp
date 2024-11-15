@@ -2,87 +2,100 @@
 #include <WinSock2.h>
 #endif // _WIN32
 #include <array>
+#include <connection.h>
+#include <coroutine.h>
+#include <error.h>
 #include <iostream>
+#include <loguru.hpp>
 #include <string>
 #include <string_view>
 #include <system_error>
-#include "connection.h"
-#include "coroutine.h"
-#include "error.h"
-#include "snowflake.h"
+#include <vector>
 
 namespace pine
 {
-  connection::connection(SOCKET socket, snowflake id)
-    : id(id), socket(socket)
+  connection::connection(SOCKET socket, iocp_context& context)
+    : socket_(socket),
+    context_(context)
   {
-    std::cout << "[Connection] New connection: " << id << std::endl;
+    LOG_F(1, "Connection created: %zu", socket_);
   }
 
-  async_operation<std::string>
-    connection::receive_raw_message() const
+  connection::~connection()
   {
-    static constexpr size_t chunk_size = 1024;
-    std::array<char, chunk_size> buffer{};
-    std::string message;
+    LOG_F(1, "Connection destroyed: %zu", socket_);
+  }
 
-    while (true)
+  void connection::on_read_raw(const iocp_operation_data* data)
+  {
+    DWORD bytes_transferred = data->bytes_transferred;
+
+    if (bytes_transferred == 0)
     {
-      size_t bytes_received =
-        recv(this->socket, buffer.data(), buffer.size(), 0);
-
-      if (bytes_received == 0)
-      {
-        co_return error(error_code::connection_closed,
-                        "The connection was closed by the remote host.");
-      }
-
-      if (bytes_received == SOCKET_ERROR)
-      {
-        co_return error(error_code::winsock_error,
-                        std::to_string(WSAGetLastError()));
-      }
-
-      message.append(buffer.data(), bytes_received);
-
-      if (bytes_received < buffer.size())
-        break;
+      LOG_F(1, "Connection %zu closed", get_socket());
+      close();
+      return;
     }
 
-    co_return message;
+    message_size_ += bytes_transferred;
+
+    if (message_size_ == 1024)
+    {
+      LOG_F(INFO, "Connection %zu received partial message", get_socket());
+      post_read();
+    }
+    else
+    {
+      std::string_view message{ message_buffer_.data(),
+                                message_buffer_.size() };
+
+      on_read(message);
+
+      LOG_F(INFO, "Connection %zu received message of size %zu", get_socket(), message.size());
+
+      message_buffer_.clear();
+      message_size_ = 0;
+    }
   }
 
-  async_operation<void>
-    connection::send_raw_message(std::string_view raw_message) const
+  void connection::on_write_raw(const iocp_operation_data*)
+  {
+    LOG_F(INFO, "Connection %zu wrote message", get_socket());
+
+    on_write();
+  }
+
+  void connection::post_read()
+  {
+    message_buffer_.resize(message_size_ + 1024);
+    WSABUF wsa_buffer{};
+    wsa_buffer.buf = message_buffer_.data() + message_size_;
+    wsa_buffer.len = 1024;
+    if (!context_.post(iocp_operation::read, socket_, wsa_buffer, 0))
+    {
+      LOG_F(WARNING, "Failed to post read operation: %d", WSAGetLastError());
+    }
+  }
+
+  void connection::post_write(std::string_view raw_message) const
   {
     if (raw_message.empty())
-      co_return{};
+      return;
 
-    size_t bytes_sent = send(this->socket,
-                             raw_message.data(),
-                             static_cast<int>(raw_message.size()),
-                             0);
+    WSABUF wsa_buffer{};
+    wsa_buffer.buf = const_cast<char*>(raw_message.data());
+    wsa_buffer.len = static_cast<ULONG>(raw_message.size());
 
-    if (bytes_sent == SOCKET_ERROR)
-    {
-      co_return error(error_code::winsock_error,
-                      std::to_string(WSAGetLastError()));
-    }
-
-    if (bytes_sent != raw_message.size())
-    {
-      co_return error(error_code::winsock_error,
-                      "Not all bytes were sent.");
-    }
-
-    co_return{};
+    context_.post(iocp_operation::write, socket_, wsa_buffer, 0);
   }
 
   void connection::close()
   {
-    shutdown(this->socket, SD_BOTH);
-    closesocket(this->socket);
+    shutdown(this->socket_, SD_BOTH);
+    closesocket(this->socket_);
 
-    this->socket = INVALID_SOCKET;
+    this->socket_ = INVALID_SOCKET;
+
+    LOG_F(INFO, "Connection %d closed", get_socket());
   }
 }
