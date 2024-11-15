@@ -77,7 +77,7 @@ namespace pine
 
   void server_connection::on_read(std::string_view request_string)
   {
-    auto request_result = http_request::parse(std::string(request_string));
+    auto request_result = http_request::parse(request_string);
 
     if (!request_result)
     {
