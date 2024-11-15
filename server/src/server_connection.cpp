@@ -68,10 +68,16 @@ namespace pine
 
   void server_connection::on_write()
   {
-    this->close();
 
     if (auto self = weak_this.lock())
-      self->server.remove_client(self->get_socket());
+    {
+      auto socket = self->get_socket();
+      if (socket != INVALID_SOCKET)
+      {
+        self->server.remove_client(self->get_socket());
+        this->close();
+      }
+    }
   }
 
 

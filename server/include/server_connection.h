@@ -15,7 +15,6 @@ namespace pine
   /// @brief A connection to a client.
   class server_connection
     : public connection
-    , public std::enable_shared_from_this<server_connection>
   {
     friend class server;
 

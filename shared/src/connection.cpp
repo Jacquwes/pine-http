@@ -91,11 +91,12 @@ namespace pine
 
   void connection::close()
   {
-    shutdown(this->socket_, SD_BOTH);
-    closesocket(this->socket_);
-
-    LOG_F(INFO, "Connection %d closed", get_socket());
-
-    this->socket_ = INVALID_SOCKET;
+    if (socket_ != INVALID_SOCKET)
+    {
+      shutdown(socket_, SD_BOTH);
+      closesocket(socket_);
+      LOG_F(INFO, "Connection %zu closed", get_socket());
+      socket_ = INVALID_SOCKET;
+    }
   }
 }
