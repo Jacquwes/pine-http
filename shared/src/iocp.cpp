@@ -158,7 +158,8 @@ namespace pine
     GetSystemInfo(&system_info);
 
     auto thread_args = new thread_data{ iocp_, socket, this };
-    for (DWORD i = 0; i < system_info.dwNumberOfProcessors; i++)
+    for (DWORD i = 0; i < system_info.dwNumberOfProcessors * 2
+; i++)
     {
       std::thread(worker_thread, thread_args).detach();
       //CreateThread(nullptr, 0, worker_thread, &data, 0, nullptr);
