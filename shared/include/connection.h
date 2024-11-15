@@ -42,7 +42,7 @@ namespace pine
     void on_write_raw(const iocp_operation_data* data);
     
     /// @brief Close the connection.
-    void close();
+    virtual void close();
 
     constexpr SOCKET get_socket() const
     {
