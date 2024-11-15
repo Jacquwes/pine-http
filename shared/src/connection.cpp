@@ -32,7 +32,7 @@ namespace pine
 
     if (bytes_transferred == 0)
     {
-      LOG_F(1, "Connection %zu closed", get_socket());
+      LOG_F(1, "Connection %zu ended by peer", get_socket());
       close();
       return;
     }
