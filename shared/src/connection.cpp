@@ -19,6 +19,7 @@ namespace pine
     context_(context)
   {
     LOG_F(1, "Connection created: %zu", socket_);
+    message_buffer_.reserve(1024);
   }
 
   connection::~connection()
