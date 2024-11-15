@@ -24,6 +24,8 @@ namespace pine
       ULONG_PTR completion_key;
       LPOVERLAPPED overlapped;
 
+      LOG_F(1, "Worker thread waiting for notification");
+
       bool result = GetQueuedCompletionStatus(iocp,
                                               &bytes_transferred,
                                               &completion_key,
@@ -34,10 +36,15 @@ namespace pine
 
       if (!result || !overlapped)
       {
-        LOG_F(ERROR, "Worker thread failed to get completion status: %d\n"
-              "\tiocp\t = %d\n"
-              "\tsocket\t = %d",
-              GetLastError(), iocp, socket);
+        LOG_F(ERROR, "Worker thread failed to get completion status:\n"
+              "\tiocp                             = %d\n"
+              "\tsocket                           = %d\n"
+              "\tWSAGetLastError                  = %d\n"
+              "\tGetQueuedCompletionStatusresult  = %x\n"
+              "\toverlapped                       = %x\n"
+              "\tbytes_transferred                = %d\n"
+              "\tcompletion_key                   = %d\n",
+              iocp, socket, GetLastError(), result, overlapped, bytes_transferred, completion_key);
         break;
       }
 
@@ -86,7 +93,7 @@ namespace pine
     if (HANDLE cp = CreateIoCompletionPort(std::bit_cast<HANDLE>(socket), iocp_, socket, 0);
         cp == nullptr)
     {
-      LOG_F(WARNING, "Failed to associate socket %d with IOCP", socket);
+      LOG_F(ERROR, "Failed to associate socket %d with IOCP", socket);
       return false;
     }
 
@@ -216,7 +223,7 @@ namespace pine
                              nullptr);
         result == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING)
     {
-      LOG_F(WARNING, "Failed to post WSARecv: %d", WSAGetLastError());
+      LOG_F(ERROR, "Failed to post WSARecv: %d", WSAGetLastError());
       delete data;
       return false;
     }

@@ -18,12 +18,12 @@ namespace pine
     : socket_(socket),
     context_(context)
   {
-    LOG_F(1, "Connection created: %d", socket_);
+    LOG_F(1, "Connection created: %zu", socket_);
   }
 
   connection::~connection()
   {
-    LOG_F(1, "Connection destroyed: %d", socket_);
+    LOG_F(1, "Connection destroyed: %zu", socket_);
   }
 
   void connection::on_read_raw(const iocp_operation_data* data)
@@ -32,7 +32,7 @@ namespace pine
 
     if (message_size_ == 1024)
     {
-      LOG_F(INFO, "Connection %d received partial message", get_socket());
+      LOG_F(INFO, "Connection %zu received partial message", get_socket());
       post_read();
     }
     else
@@ -42,7 +42,7 @@ namespace pine
 
       on_read(message);
 
-      LOG_F(INFO, "Connection %d received message of size %d", get_socket(), message.size());
+      LOG_F(INFO, "Connection %zu received message of size %zu", get_socket(), message.size());
 
       message_buffer_.clear();
       message_size_ = 0;
@@ -62,7 +62,10 @@ namespace pine
     WSABUF wsa_buffer{};
     wsa_buffer.buf = message_buffer_.data();
     wsa_buffer.len = static_cast<ULONG>(message_buffer_.size());
-    context_.post(iocp_operation::read, socket_, wsa_buffer, 0);
+    if (!context_.post(iocp_operation::read, socket_, wsa_buffer, 0))
+    {
+      LOG_F(WARNING, "Failed to post read operation: %d", WSAGetLastError());
+    }
   }
 
   void connection::post_write(std::string_view raw_message) const
