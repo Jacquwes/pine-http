@@ -51,6 +51,9 @@ namespace pine
 
   protected:
     std::atomic<bool> write_pending = false;
+    std::atomic<bool> read_pending = false;
+    std::atomic<bool> is_closed = false;
+    std::mutex operation_mutex;
 
   private:
     /// @brief The socket of the connection.
