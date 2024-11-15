@@ -22,7 +22,7 @@ namespace pine
 
   void server_connection::handle_request(http_request& request) const
   {
-    const std::string& path = request.get_uri();
+    std::string_view path = request.get_uri();
 
     const auto& [route, found, params] = this->server.routes.find_route_with_params(path);
 

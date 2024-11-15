@@ -11,7 +11,7 @@
 
 namespace pine::http_utils
 {
-  std::expected<std::string, pine::error>
+  std::expected<std::string_view, pine::error>
     try_get_body(std::string_view request, size_t& offset)
   {
     if (offset >= request.size())
@@ -21,13 +21,13 @@ namespace pine::http_utils
               "There is no body at this position."));
     }
 
-    const auto& body = std::string(request.substr(offset));
+    std::string_view body = request.substr(offset);
     offset = request.size();
 
     return body;
   }
 
-  std::expected<std::pair<std::string, std::string>, pine::error>
+  std::expected<std::pair<std::string, std::string_view>, pine::error>
     try_get_header(std::string_view request, size_t& offset)
   {
     size_t start = offset;
@@ -56,10 +56,10 @@ namespace pine::http_utils
     return std::make_pair(name, value);
   }
 
-  std::expected<std::map<std::string, std::string>, pine::error>
-    try_get_headers(const std::string& request, size_t& offset)
+  std::expected<std::map<std::string, std::string_view>, pine::error>
+    try_get_headers(std::string_view request, size_t& offset)
   {
-    std::map<std::string, std::string> result;
+    std::map<std::string, std::string_view> result;
 
     while (true)
     {
@@ -119,7 +119,7 @@ namespace pine::http_utils
                                       "The status is not recognized."));
   }
 
-  std::expected<std::string, pine::error>
+  std::expected<std::string_view, pine::error>
     try_get_uri(std::string_view request, size_t& offset)
   {
     if (request.at(offset) != '/')
