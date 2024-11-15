@@ -15,8 +15,8 @@ target_sources(shared
     "include/http_request.h"
     "include/http_response.h"
     "include/iocp.h"
-    "include/snowflake.h"
-    "include/thread_pool.h"
+    
+    
     "include/wsa.h"
 
     "src/connection.cpp"
