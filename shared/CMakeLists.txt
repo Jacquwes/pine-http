@@ -25,8 +25,8 @@ target_sources(shared
     "src/http_request.cpp"
     "src/http_response.cpp"
     "src/iocp.cpp"
-    "src/snowflake.cpp"
-    "src/thread_pool.cpp"
+    
+    
     "src/wsa.cpp"
 )
 
