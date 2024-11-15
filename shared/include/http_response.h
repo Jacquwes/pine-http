@@ -20,11 +20,11 @@ namespace pine
     /// @param response The string representation of the HTTP response.
     /// @return An expected object containing the parsed HTTP response or an error code.
     static std::expected<http_response, pine::error>
-      parse(const std::string& response);
+      parse(std::string_view response);
 
     /// @brief Gets the body of the HTTP response.
     /// @return A constant reference to the body string.
-    constexpr const std::string& get_body() const
+    constexpr std::string_view get_body() const
     {
       return this->body;
     }
@@ -32,11 +32,11 @@ namespace pine
     /// @brief Gets the value of a specific header in the HTTP response.
     /// @param name The name of the header.
     /// @return A constant reference to the header value.
-    const std::string& get_header(const std::string& name) const;
+    std::string_view get_header(const std::string& name) const;
 
     /// @brief Gets all the headers in the HTTP response.
     /// @return A constant reference to the headers map.
-    constexpr const std::map<std::string, std::string>& get_headers() const
+    constexpr const std::map<std::string, std::string_view>& get_headers() const
     {
       return this->headers;
     }
@@ -77,7 +77,7 @@ namespace pine
     /// @brief Sets a header in the HTTP response.
     /// @param name The name of the header.
     /// @param value The value of the header.
-    void set_header(const std::string& name, const std::string& value)
+    void set_header(const std::string& name, std::string_view value)
     {
       this->headers.insert_or_assign(name, value);
     }
@@ -98,7 +98,7 @@ namespace pine
 
   private:
     std::string body;
-    std::map<std::string, std::string> headers;
+    std::map<std::string, std::string_view> headers;
     http_status status = http_status::ok;
     http_version version = http_version::http_1_1;
   };

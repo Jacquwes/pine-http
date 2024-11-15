@@ -9,7 +9,7 @@
 namespace pine
 {
   std::expected<http_response, pine::error>
-    http_response::parse(const std::string& response)
+    http_response::parse(std::string_view response)
   {
     http_response result{};
 
@@ -43,7 +43,7 @@ namespace pine
     return result;
   }
 
-  const std::string&
+  std::string_view
     http_response::get_header(const std::string& name) const
   {
     if (this->headers.contains(name))
@@ -59,21 +59,22 @@ namespace pine
 
   std::string http_response::to_string() const
   {
-    std::string result;
-    const std::string& version_string = http_version_strings.at(this->version);
+    std::string_view version_string = http_version_strings.at(this->version);
     const std::string& status_code_string = std::to_string(static_cast<int>(this->status));
-    const std::string& status_message_string = http_status_strings.at(this->status);
+    std::string_view status_message_string = http_status_strings.at(this->status);
 
-    result += std::format("{} {} {}",
-                          version_string,
-                          status_code_string,
-                          status_message_string);
+    std::string result = std::format("{} {} {}",
+                                     version_string,
+                                     status_code_string,
+                                     status_message_string);
 
     result += crlf;
 
     for (const auto& [name, value] : this->headers)
     {
-      result += name + ": " + value + crlf;
+      result += name + ": ";
+      result += value;
+      result += crlf;
     }
 
     result += crlf;
