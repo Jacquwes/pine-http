@@ -129,9 +129,9 @@ namespace pine
 
       shutdown(socket_, SD_BOTH);
       closesocket(socket_);
-      socket_ = INVALID_SOCKET;
-
       LOG_F(INFO, "Connection %zu closed", get_socket());
+
+      socket_ = INVALID_SOCKET;
     }
   }
 }
