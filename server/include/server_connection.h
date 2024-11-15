@@ -11,7 +11,8 @@ namespace pine
 
   /// @brief A connection to a client.
   class server_connection
-    : public connection
+    : public connection,
+    public std::enable_shared_from_this<server_connection>
   {
     friend class server;
 
@@ -41,8 +42,6 @@ namespace pine
   private:
     /// @brief The server that the connection is connected to.
     server& server;
-
-    std::weak_ptr<server_connection> weak_this;
 
     std::atomic<bool> is_reading = true;
     std::atomic<bool> pending_close = false;
