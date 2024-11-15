@@ -7,7 +7,6 @@
 #include <string_view>
 #include <coroutine.h>
 #include <error.h>
-#include <snowflake.h>
 
 #ifdef _WIN32
 #include <WinSock2.h>

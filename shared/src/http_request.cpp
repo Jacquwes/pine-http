@@ -11,7 +11,7 @@ namespace pine
   http_request::http_request(pine::http_method method,
                              std::string_view uri,
                              pine::http_version version,
-                             const std::map<std::string, std::string_view>& headers,
+                             const std::unordered_map<std::string, std::string_view>& headers,
                              std::string_view body)
     : method(method), uri(uri), version(version), headers(headers), body(body)
   {}

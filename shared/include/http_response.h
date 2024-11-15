@@ -36,7 +36,7 @@ namespace pine
 
     /// @brief Gets all the headers in the HTTP response.
     /// @return A constant reference to the headers map.
-    constexpr const std::map<std::string, std::string_view>& get_headers() const
+    constexpr const std::unordered_map<std::string, std::string_view>& get_headers() const
     {
       return this->headers;
     }
@@ -98,7 +98,7 @@ namespace pine
 
   private:
     std::string body;
-    std::map<std::string, std::string_view> headers;
+    std::unordered_map<std::string, std::string_view> headers;
     http_status status = http_status::ok;
     http_version version = http_version::http_1_1;
   };
