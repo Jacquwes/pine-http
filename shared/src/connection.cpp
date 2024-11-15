@@ -94,8 +94,8 @@ namespace pine
     shutdown(this->socket_, SD_BOTH);
     closesocket(this->socket_);
 
-    this->socket_ = INVALID_SOCKET;
-
     LOG_F(INFO, "Connection %d closed", get_socket());
+
+    this->socket_ = INVALID_SOCKET;
   }
 }
