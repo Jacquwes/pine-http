@@ -34,6 +34,8 @@ namespace pine
     friend class iocp_context;
 
   public:
+    using callback_function = std::function<void(const http_request&, http_response&)>;
+
     /// @brief Construct a server with the given asio context and port.
     explicit server(const char* port = "80");
 
@@ -58,8 +60,7 @@ namespace pine
     /// @return A reference to the created route.
     route_node&
       add_route(route_path path,
-                const std::function<void(const http_request&,
-                                         http_response&)>& handler,
+                const callback_function& handler,
                 const std::initializer_list<pine::http_method>& methods
                 = { http_method::get });
 
@@ -70,6 +71,12 @@ namespace pine
     /// @return 
     route_node& add_static_route(route_path path,
                                  std::filesystem::path&& location);
+
+    /// @brief Add an error handler to the server. The handler will be called
+    /// when the server encounters a certain error.
+    /// @param status The status to match.
+    /// @param handler The function to call.
+    void add_error_handler(http_status status, callback_function&& handler);
 
     /// @brief Get a route by path and method.
     /// @return If the route was found, a shared pointer to the route.
@@ -91,6 +98,8 @@ namespace pine
     std::mutex mutate_clients_mutex;
 
     std::unordered_map<uint64_t, std::shared_ptr<server_connection>> clients;
+    std::unordered_map<http_status, callback_function> error_handlers;
+
     route_tree routes;
 
     const char* port;

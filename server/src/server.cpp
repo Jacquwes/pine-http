@@ -26,7 +26,17 @@ namespace pine
   server::server(const char* port)
     : iocp_{},
     port{ port }
-  {}
+  {
+    for (const auto& [status_code, status_string] : http_status_strings)
+    {
+      error_handlers[status_code] =
+        [&status_string, &status_code](const auto&, auto& res)
+        {
+          res.set_body(status_string);
+          res.set_status(status_code);
+        };
+    }
+  }
 
   std::expected<void, error> server::start()
   {
@@ -58,9 +68,9 @@ namespace pine
     LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
 
     iocp_.init(server_socket);
-    iocp_.set_on_accept(std::bind(&server::on_accept, this, std::placeholders::_1));
-    iocp_.set_on_read(std::bind(&server::on_read, this, std::placeholders::_1));
-    iocp_.set_on_write(std::bind(&server::on_write, this, std::placeholders::_1));
+    iocp_.set_on_accept([this](const pine::iocp_operation_data* data) { on_accept(data); });
+    iocp_.set_on_read([this](const pine::iocp_operation_data* data) { on_read(data); });
+    iocp_.set_on_write([this](const pine::iocp_operation_data* data) { on_write(data); });
     iocp_.associate(server_socket);
 
     LOG_F(INFO, "IOCP initialized.");
@@ -156,6 +166,11 @@ namespace pine
     LOG_F(INFO, "Added static route: %s", path.get().data());
 
     return new_route;
+  }
+
+  void server::add_error_handler(http_status status, callback_function&& callback)
+  {
+    error_handlers[status] = std::move(callback);
   }
 
   const route_node&

@@ -20,6 +20,16 @@ namespace pine
     post_read();
   }
 
+  void server_connection::handle_error(http_status status, const http_request& request, http_response& response) const
+  {
+    const auto& handler = server.error_handlers[status];
+
+    response.set_header("Connection", "close");
+    response.set_status(status);
+
+    handler(request, response);
+  }
+
   void server_connection::handle_request(http_request& request) const
   {
     const std::string& path = request.get_uri();
@@ -31,15 +41,11 @@ namespace pine
 
     if (!found)
     {
-      response.set_header("Content-Type", "text/plain");
-      response.set_status(http_status::not_found);
-      response.set_body("404 Not Found");
+      handle_error(http_status::not_found, request, response);
     }
     else if (route.handlers()[static_cast<size_t>(request.get_method())] == nullptr)
     {
-      response.set_header("Content-Type", "text/plain");
-      response.set_status(http_status::method_not_allowed);
-      response.set_body("405 Method Not Allowed");
+      handle_error(http_status::method_not_allowed, request, response);
     }
     else
     {
@@ -75,7 +81,10 @@ namespace pine
 
     if (!request_result)
     {
-      LOG_F(ERROR, "Failed to parse request: %s", request_result.error().message().c_str());
+      http_response response;
+      http_request request;
+      handle_error(http_status::bad_request, request, response);
+      send_response(response);
       return;
     }
 
