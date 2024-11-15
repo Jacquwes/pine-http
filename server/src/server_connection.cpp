@@ -2,6 +2,7 @@
 #include <connection.h>
 #include <coroutine.h>
 #include <error.h>
+#include <loguru.hpp>
 #include <http.h>
 #include <http_request.h>
 #include <http_response.h>
