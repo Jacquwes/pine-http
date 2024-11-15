@@ -62,23 +62,27 @@ namespace pine
 
   void server_connection::send_response(http_response const& response)
   {
+    auto self = shared_from_this();
+
     const std::string& response_string = response.to_string();
     post_write(response_string);
   }
 
   void server_connection::on_write()
   {
-    if (auto self = weak_this.lock())
+    auto self = shared_from_this();
+
+    if (pending_close)
     {
-      if (pending_close)
+      if (!write_pending)
       {
         self->server.remove_client(self->get_socket());
         this->close();
       }
-      else if (is_reading)
-      {
-        post_read();
-      }
+    }
+    else if (is_reading)
+    {
+      post_read();
     }
   }
 
