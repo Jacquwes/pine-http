@@ -34,28 +34,35 @@ namespace pine
     if (is_closed)
       return;
 
-    DWORD bytes_transferred = data->bytes_transferred;
-    if (bytes_transferred == 0)
+    try
     {
-      LOG_F(1, "Connection %zu ended by peer", get_socket());
+      DWORD bytes_transferred = data->bytes_transferred;
+      if (bytes_transferred == 0)
+      {
+        LOG_F(1, "Connection %zu ended by peer", get_socket());
+        close();
+        return;
+      }
+
+      message_size_ += bytes_transferred;
+
+      std::string_view message{ message_buffer_.data(),
+                                message_buffer_.size() };
+
+      on_read(message);
+
+      LOG_F(INFO, "Connection %zu received message of size %zu", get_socket(), message.size());
+
+      message_buffer_.clear();
+      message_size_ = 0;
+
+      if (!is_closed)
+        post_read();
+    } catch (const std::exception& e)
+    {
+      LOG_F(ERROR, "Exception thrown while trying to read message on socket %zu: %s", get_socket(), e.what());
       close();
-      return;
     }
-
-    message_size_ += bytes_transferred;
-
-    std::string_view message{ message_buffer_.data(),
-                              message_buffer_.size() };
-
-    on_read(message);
-
-    LOG_F(INFO, "Connection %zu received message of size %zu", get_socket(), message.size());
-
-    message_buffer_.clear();
-    message_size_ = 0;
-
-    if (!is_closed)
-      post_read();
   }
 
   void connection::on_write_raw(const iocp_operation_data* data)
@@ -76,43 +83,57 @@ namespace pine
 
   void connection::post_read()
   {
-    std::lock_guard lock{ operation_mutex };
-
-    if (is_closed || read_pending)
-      return;
-
-    if (message_buffer_.size() < message_size_ + 1024)
-      message_buffer_.resize(message_size_ + 1024);
-
-    WSABUF wsa_buffer{};
-    wsa_buffer.buf = message_buffer_.data() + message_size_;
-    wsa_buffer.len = 1024;
-
-    read_pending = true;
-    if (!context_.post(iocp_operation::read, socket_, wsa_buffer, 0))
+    try
     {
-      LOG_F(WARNING, "Failed to post read operation: %d", WSAGetLastError());
-      read_pending = false;
+      std::lock_guard lock{ operation_mutex };
+
+      if (is_closed || read_pending)
+        return;
+
+      if (message_buffer_.size() < message_size_ + 1024)
+        message_buffer_.resize(message_size_ + 1024);
+
+      WSABUF wsa_buffer{};
+      wsa_buffer.buf = message_buffer_.data() + message_size_;
+      wsa_buffer.len = 1024;
+
+      read_pending = true;
+      if (!context_.post(iocp_operation::read, socket_, wsa_buffer, 0))
+      {
+        LOG_F(WARNING, "Failed to post read operation: %d", WSAGetLastError());
+        read_pending = false;
+        close();
+      }
+    } catch (const std::exception& e)
+    {
+      LOG_F(ERROR, "Exception thrown while trying to post read operation on socket %zu: %s", get_socket(), e.what());
       close();
     }
   }
 
   void connection::post_write(std::string_view raw_message)
   {
-    std::lock_guard lock{ operation_mutex };
-
-    if (is_closed || write_pending || raw_message.empty())
-      return;
-
-    WSABUF wsa_buffer{};
-    wsa_buffer.buf = const_cast<char*>(raw_message.data());
-    wsa_buffer.len = static_cast<ULONG>(raw_message.size());
-
-    write_pending = true;
-    if (!context_.post(iocp_operation::write, socket_, wsa_buffer, 0))
+    try
     {
-      LOG_F(WARNING, "Failed to post write operation: %d", WSAGetLastError());
-      write_pending = false;
+      std::lock_guard lock{ operation_mutex };
+
+      if (is_closed || write_pending || raw_message.empty())
+        return;
+
+      WSABUF wsa_buffer{};
+      wsa_buffer.buf = const_cast<char*>(raw_message.data());
+      wsa_buffer.len = static_cast<ULONG>(raw_message.size());
+
+      write_pending = true;
+      if (!context_.post(iocp_operation::write, socket_, wsa_buffer, 0))
+      {
+        LOG_F(WARNING, "Failed to post write operation: %d", WSAGetLastError());
+        write_pending = false;
+        close();
+      }
+    } catch (const std::exception& e)
+    {
+      LOG_F(ERROR, "Exception thrown while trying to post write operation on socket %zu: %s", get_socket(), e.what());
       close();
     }
   }
