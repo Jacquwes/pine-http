@@ -19,6 +19,11 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <WinSock2.h>
+#include <ws2def.h>
+#include <Mstcpip.h>
+#include <Mswsock.h>
+#include <ws2ipdef.h>
 #include <wsa.h>
 
 namespace pine
@@ -54,19 +59,6 @@ namespace pine
       return std::make_unexpected(socket_result.error());
     server_socket = socket_result.value();
 
-    if (const auto& bind_result = bind_socket(server_socket,
-                                              address_info);
-        !bind_result)
-      return std::make_unexpected(bind_result.error());
-
-    if (const auto& listen_result = listen_socket(server_socket, 1000);
-        !listen_result)
-      return std::make_unexpected(listen_result.error());
-
-    is_listening = true;
-
-    LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
-
     int opt = 1;
     // Allow the socket to be reused.
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
@@ -76,12 +68,40 @@ namespace pine
     setsockopt(server_socket, IPPROTO_TCP, TCP_NODELAY,
                (char*)&opt, sizeof(opt));
 
+    linger linger_options = { 1, 0 };
+    setsockopt(server_socket, SOL_SOCKET, SO_LINGER,
+               (char*)&linger_options, sizeof(linger_options));
+
     // Increase the buffer size.
-    int buffer_size = 64 * 1024;
+    int socket_buffer_size = 0;
     setsockopt(server_socket, SOL_SOCKET, SO_RCVBUF,
-               (char*)&buffer_size, sizeof(buffer_size));
+               (char*)&socket_buffer_size, sizeof(socket_buffer_size));
     setsockopt(server_socket, SOL_SOCKET, SO_SNDBUF,
-               (char*)&buffer_size, sizeof(buffer_size));
+               (char*)&socket_buffer_size, sizeof(socket_buffer_size));
+
+    // Enable TCP Fast Open.
+    int fast_open = 20;
+    setsockopt(server_socket, IPPROTO_TCP, TCP_FASTOPEN,
+               (char*)&fast_open, sizeof(fast_open));
+
+    // Enable keep-alive.
+    DWORD keep_alive = 1;
+    tcp_keepalive alive = { 1, 10000, 1000 };
+    WSAIoctl(server_socket, SIO_KEEPALIVE_VALS, &alive, sizeof(alive),
+             nullptr, 0, &keep_alive, nullptr, nullptr);
+
+    if (const auto& bind_result = bind_socket(server_socket,
+                                              address_info);
+        !bind_result)
+      return std::make_unexpected(bind_result.error());
+
+    if (const auto& listen_result = listen_socket(server_socket, SOMAXCONN);
+        !listen_result)
+      return std::make_unexpected(listen_result.error());
+
+    is_listening = true;
+
+    LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
 
     iocp_.init(server_socket);
     iocp_.set_on_accept([this](const pine::iocp_operation_data* data) { on_accept(data); });
@@ -125,9 +145,9 @@ namespace pine
     // Post 10 accept operations so there is no delay starting a new thread
     // when a client connects.
 
-    LOG_F(INFO, "Posting 100 accept operations.");
+    LOG_F(INFO, "Posting 10 accept operations.");
 
-    for (size_t i = 0; i < 100; i++)
+    for (size_t i = 0; i < 10; i++)
     {
       if (!iocp_.post(iocp_operation::accept, server_socket, {}, 0))
         return std::make_unexpected(error(error_code::iocp_error,

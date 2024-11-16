@@ -86,7 +86,7 @@ namespace pine
       get_route(std::string_view path) const;
 
   private:
-    static constexpr size_t buffer_size = 4 * 1024;
+    static constexpr size_t buffer_size = 64 * 1024;
 
     /// @brief Accept clients.
     /// This function waits for clients to connect and creates a server
