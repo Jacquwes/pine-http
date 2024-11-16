@@ -144,9 +144,12 @@ namespace pine
     const auto& it = clients.find(client_id);
     if (it == clients.end())
     {
+      LOG_F(WARNING, "Attempting to remove non-existent client: % zu", client_id);
       co_return error(error_code::client_not_found,
                       "The client was not found.");
     }
+
+    LOG_F(INFO, "Removing client: %zu. Remaining clients: %llu", client_id, clients.size() - 1);
 
     auto&& client = std::move(it->second);
     clients.erase(it);
@@ -199,11 +202,12 @@ namespace pine
   void server::on_accept(const iocp_operation_data* data)
   {
     const auto& client_socket = data->socket;
-    const auto& client = std::make_shared<server_connection>(client_socket,
+    LOG_F(INFO, "New client connection accepted: %zu", client_socket);
                                                              *this);
 
     std::unique_lock lock{ clients_mutex_ };
     clients[data->socket] = client;
+      LOG_F(INFO, "Client added to the list: %zu", client_socket);
 
     iocp_.post(iocp_operation::accept, server_socket, {}, 0);
   }
