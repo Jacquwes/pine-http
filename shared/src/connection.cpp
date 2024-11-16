@@ -58,7 +58,7 @@ namespace pine
 
       if (!is_closed)
         post_read();
-    } catch (const std::exception& e)
+    } catch (const std::system_error& e)
     {
       LOG_F(ERROR, "Exception thrown while trying to read message on socket %zu: %s", get_socket(), e.what());
       close();
@@ -104,7 +104,7 @@ namespace pine
         read_pending = false;
         close();
       }
-    } catch (const std::exception& e)
+    } catch (const std::system_error& e)
     {
       LOG_F(ERROR, "Exception thrown while trying to post read operation on socket %zu: %s", get_socket(), e.what());
       close();
@@ -131,7 +131,7 @@ namespace pine
         write_pending = false;
         close();
       }
-    } catch (const std::exception& e)
+    } catch (const std::system_error& e)
     {
       LOG_F(ERROR, "Exception thrown while trying to post write operation on socket %zu: %s", get_socket(), e.what());
       close();
