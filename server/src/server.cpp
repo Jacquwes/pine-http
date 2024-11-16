@@ -201,7 +201,7 @@ namespace pine
     const auto& client = std::make_shared<server_connection>(client_socket,
                                                              *this);
 
-    std::shared_lock lock{ clients_mutex_ };
+    std::unique_lock lock{ clients_mutex_ };
     clients[data->socket] = client;
   }
 
