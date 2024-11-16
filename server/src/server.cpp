@@ -148,6 +148,7 @@ namespace pine
                       "The client was not found.");
     }
 
+    auto&& client = std::move(it->second);
     clients.erase(it);
 
     co_return{};
@@ -203,6 +204,8 @@ namespace pine
 
     std::unique_lock lock{ clients_mutex_ };
     clients[data->socket] = client;
+
+    iocp_.post(iocp_operation::accept, server_socket, {}, 0);
   }
 
   void server::on_read(const iocp_operation_data* data)
