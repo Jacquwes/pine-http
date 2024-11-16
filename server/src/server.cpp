@@ -67,6 +67,22 @@ namespace pine
 
     LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
 
+    int opt = 1;
+    // Allow the socket to be reused.
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
+               (char*)&opt, sizeof(opt));
+
+    // Disable Nagle's algorithm.
+    setsockopt(server_socket, IPPROTO_TCP, TCP_NODELAY,
+               (char*)&opt, sizeof(opt));
+
+    // Increase the buffer size.
+    int buffer_size = 64 * 1024;
+    setsockopt(server_socket, SOL_SOCKET, SO_RCVBUF,
+               (char*)&buffer_size, sizeof(buffer_size));
+    setsockopt(server_socket, SOL_SOCKET, SO_SNDBUF,
+               (char*)&buffer_size, sizeof(buffer_size));
+
     iocp_.init(server_socket);
     iocp_.set_on_accept([this](const pine::iocp_operation_data* data) { on_accept(data); });
     iocp_.set_on_read([this](const pine::iocp_operation_data* data) { on_read(data); });
@@ -109,9 +125,9 @@ namespace pine
     // Post 10 accept operations so there is no delay starting a new thread
     // when a client connects.
 
-    LOG_F(INFO, "Posting 10 accept operations.");
+    LOG_F(INFO, "Posting 100 accept operations.");
 
-    for (size_t i = 0; i < 10; i++)
+    for (size_t i = 0; i < 100; i++)
     {
       if (!iocp_.post(iocp_operation::accept, server_socket, {}, 0))
         return std::make_unexpected(error(error_code::iocp_error,
@@ -197,7 +213,7 @@ namespace pine
   void server::on_read(const iocp_operation_data* data)
   {
     std::lock_guard lock{ mutate_clients_mutex };
-    
+
     const auto& client = clients.find(data->socket);
     if (client == clients.end())
       return;
