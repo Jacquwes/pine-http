@@ -1,12 +1,13 @@
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <vector>
-#include <iocp.h>
-#include <string_view>
 #include <coroutine.h>
+#include <cstdint>
 #include <error.h>
+#include <iocp.h>
+#include <memory>
+#include <mutex>
+#include <string_view>
+#include <vector>
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -44,7 +45,7 @@ namespace pine
     /// @brief Close the connection.
     virtual void close();
 
-    constexpr SOCKET get_socket() const
+    SOCKET get_socket() const
     {
       return socket_;
     }
@@ -53,8 +54,9 @@ namespace pine
     std::atomic<bool> write_pending = false;
     std::atomic<bool> read_pending = false;
     std::atomic<bool> is_closed = false;
-    std::mutex operation_mutex;
 
+    std::mutex buffer_mutex;
+    std::mutex operation_mutex;
   private:
     /// @brief The socket of the connection.
   #ifdef _WIN32
