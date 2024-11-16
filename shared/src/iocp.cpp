@@ -40,11 +40,12 @@ namespace pine
               "\tiocp                             = %d\n"
               "\tsocket                           = %d\n"
               "\tWSAGetLastError                  = %d\n"
+              "\tGetLastError                     = %d\n"
               "\tGetQueuedCompletionStatusresult  = %x\n"
               "\toverlapped                       = %x\n"
               "\tbytes_transferred                = %d\n"
               "\tcompletion_key                   = %d\n",
-              iocp, socket, GetLastError(), result, overlapped, bytes_transferred, completion_key);
+              iocp, socket, WSAGetLastError(), GetLastError(), result, overlapped, bytes_transferred, completion_key);
         break;
       }
 
