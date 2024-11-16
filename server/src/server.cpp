@@ -139,7 +139,7 @@ namespace pine
 
   async_operation<void> server::remove_client(uint64_t const& client_id)
   {
-    std::unique_lock lock{ mutate_clients_mutex };
+    std::unique_lock lock{ clients_mutex_ };
 
     const auto& it = clients.find(client_id);
     if (it == clients.end())
@@ -148,10 +148,7 @@ namespace pine
                       "The client was not found.");
     }
 
-    auto& client = it->second;
     clients.erase(it);
-
-    client->close();
 
     co_return{};
   }
@@ -200,37 +197,39 @@ namespace pine
 
   void server::on_accept(const iocp_operation_data* data)
   {
-    std::unique_lock lock{ mutate_clients_mutex };
-
     const auto& client_socket = data->socket;
     const auto& client = std::make_shared<server_connection>(client_socket,
                                                              *this);
 
-    // Client will clean itself up when it is done.
+    std::shared_lock lock{ clients_mutex_ };
     clients[data->socket] = client;
   }
 
   void server::on_read(const iocp_operation_data* data)
   {
-    std::lock_guard lock{ mutate_clients_mutex };
+    std::shared_ptr<server_connection> client;
+    {
+      std::shared_lock lock{ clients_mutex_ };
 
-    const auto& client = clients.find(data->socket);
-    if (client == clients.end())
-      return;
-    if (auto connection = client->second;
-        connection)
-      connection->on_read_raw(data);
+      const auto& it = clients.find(data->socket);
+      if (it == clients.end())
+        return;
+      client = it->second;
+    }
+    client->on_read_raw(data);
   }
 
   void server::on_write(const iocp_operation_data* data)
   {
-    std::lock_guard lock{ mutate_clients_mutex };
+    std::shared_ptr<server_connection> client;
+    {
+      std::shared_lock lock{ clients_mutex_ };
 
-    const auto& client = clients.find(data->socket);
-    if (client == clients.end())
-      return;
-    if (auto connection = client->second;
-        connection)
-      connection->on_write_raw(data);
+      const auto& it = clients.find(data->socket);
+      if (it == clients.end())
+        return;
+      client = it->second;
+    }
+    client->on_write_raw(data);
   }
 }
