@@ -157,12 +157,15 @@ namespace pine
     SYSTEM_INFO system_info;
     GetSystemInfo(&system_info);
 
-    auto thread_args = new thread_data{ iocp_, socket, this };
-    for (DWORD i = 0; i < system_info.dwNumberOfProcessors * 2
-; i++)
+    for (DWORD i = 0; i < system_info.dwNumberOfProcessors * 2; i++)
     {
-      std::thread(worker_thread, thread_args).detach();
-      //CreateThread(nullptr, 0, worker_thread, &data, 0, nullptr);
+      auto thread_args = new thread_data{ iocp_, socket, this };
+      this->threads_.emplace_back(worker_thread, thread_args);
+    }
+
+    for (auto& thread : threads_)
+    {
+      SetThreadPriority(thread.native_handle(), THREAD_PRIORITY_HIGHEST);
     }
 
     LOG_F(1, "Thread pool created with %d threads", system_info.dwNumberOfProcessors);

@@ -13,6 +13,8 @@
 #include <functional>
 #include <iostream>
 #include <source_location>
+#include <thread>
+#include <vector>
 
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Mswsock.lib")
@@ -114,6 +116,8 @@ namespace pine
     std::function<void(const iocp_operation_data*)> on_accept_;
     std::function<void(const iocp_operation_data*)> on_read_;
     std::function<void(const iocp_operation_data*)> on_write_;
+
+    std::vector<std::thread> threads_;
 
     using LPFN_ACCEPTEX = BOOL(PASCAL*)(SOCKET, SOCKET, PVOID, DWORD, DWORD, DWORD, LPDWORD, LPOVERLAPPED);
     LPFN_ACCEPTEX accept_ex = nullptr;
