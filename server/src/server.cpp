@@ -203,18 +203,23 @@ namespace pine
   {
     const auto& client_socket = data->socket;
     LOG_F(INFO, "New client connection accepted: %zu", client_socket);
-                                                             *this);
 
-    std::unique_lock lock{ clients_mutex_ };
-    clients[data->socket] = client;
+    const auto& client = std::make_shared<server_connection<buffer_size>>(client_socket,
+                                                                          *this);
+    {
+      std::unique_lock lock{ clients_mutex_ };
+      clients[data->socket] = client;
       LOG_F(INFO, "Client added to the list: %zu", client_socket);
+    }
+
+    client->post_read();
 
     iocp_.post(iocp_operation::accept, server_socket, {}, 0);
   }
 
   void server::on_read(const iocp_operation_data* data)
   {
-    std::shared_ptr<server_connection> client;
+    std::shared_ptr<server_connection<buffer_size>> client;
     {
       std::shared_lock lock{ clients_mutex_ };
 
@@ -228,7 +233,7 @@ namespace pine
 
   void server::on_write(const iocp_operation_data* data)
   {
-    std::shared_ptr<server_connection> client;
+    std::shared_ptr<server_connection<buffer_size>> client;
     {
       std::shared_lock lock{ clients_mutex_ };
 
