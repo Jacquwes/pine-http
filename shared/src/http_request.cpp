@@ -9,15 +9,15 @@
 namespace pine
 {
   http_request::http_request(pine::http_method method,
-                             const std::string& uri,
+                             std::string_view uri,
                              pine::http_version version,
-                             const std::map<std::string, std::string>& headers,
-                             const std::string& body)
+                             const std::unordered_map<std::string, std::string_view>& headers,
+                             std::string_view body)
     : method(method), uri(uri), version(version), headers(headers), body(body)
   {}
 
   std::expected<http_request, pine::error>
-    http_request::parse(const std::string& request)
+    http_request::parse(std::string_view request)
   {
     http_request result;
 
@@ -43,7 +43,8 @@ namespace pine
     const auto& headers_result = http_utils::try_get_headers(request, offset);
     if (!headers_result)
       return std::make_unexpected(headers_result.error());
-    result.headers = headers_result.value();
+    for (const auto& [name, value] : headers_result.value())
+      result.headers.insert_or_assign(name, value);
 
     if (offset < request.size())
     {
@@ -56,7 +57,7 @@ namespace pine
     return result;
   }
 
-  const std::string& http_request::get_header(const std::string& name) const
+  std::string_view http_request::get_header(const std::string& name) const
   {
     if (this->headers.contains(name))
     {
@@ -73,13 +74,15 @@ namespace pine
   {
     std::string result;
 
-    result += pine::http_method_strings.at(this->method) + " ";
+    result += pine::http_method_strings.at(this->method);
+    result += " ";
     result += this->uri + " ";
-    result += pine::http_version_strings.at(this->version) + crlf;
+    result += pine::http_version_strings.at(this->version);
+    result += crlf;
 
     for (const auto& [name, value] : this->headers)
     {
-      result += name + ": " + value + crlf;
+      result += name + ": " + std::string(value) + crlf;
     }
 
     result += crlf;

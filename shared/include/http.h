@@ -43,7 +43,7 @@ namespace pine
   constexpr auto http_method_count = 9;
 
   /// @brief Map of HTTP methods to their string representations.
-  inline const std::map<http_method, std::string> http_method_strings
+  inline const std::unordered_map<http_method, std::string_view> http_method_strings
   {
     { http_method::get, "GET" },
     { http_method::head, "HEAD" },
@@ -67,7 +67,7 @@ namespace pine
   };
 
   /// @brief Map of HTTP status codes to their string representations.
-  inline const std::map<http_status, std::string> http_status_strings
+  inline const std::unordered_map<http_status, std::string_view> http_status_strings
   {
     { http_status::ok, "OK" },
     { http_status::bad_request, "Bad Request" },
@@ -83,7 +83,7 @@ namespace pine
   };
 
   /// @brief Map of HTTP versions to their string representations.
-  inline const std::map<http_version, std::string> http_version_strings
+  inline const std::unordered_map<http_version, std::string_view> http_version_strings
   {
     { http_version::http_1_1, "HTTP/1.1" },
   };
@@ -97,21 +97,21 @@ namespace pine
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the body starts.
     /// @return The extracted body as a string.
-    std::expected<std::string, pine::error>
+    std::expected<std::string_view, pine::error>
       try_get_body(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract the headers from an HTTP request.
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the headers start.
     /// @return The extracted headers as a map of key-value pairs.
-    std::expected<std::map<std::string, std::string>, pine::error>
-      try_get_headers(const std::string& request, size_t& offset);
+    std::expected<std::unordered_map<std::string, std::string>, pine::error>
+      try_get_headers(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract a single header from an HTTP request.
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the header starts.
     /// @return The extracted header as a pair of key and value.
-    std::expected<std::pair<std::string, std::string>, pine::error>
+    std::expected<std::pair<std::string, std::string_view>, pine::error>
       try_get_header(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract the HTTP method from an HTTP request.
@@ -132,7 +132,7 @@ namespace pine
     /// @param request The HTTP request.
     /// @param offset The offset in the request where the URI starts.
     /// @return The extracted URI as a string.
-    std::expected<std::string, pine::error>
+    std::expected<std::string_view, pine::error>
       try_get_uri(std::string_view request, size_t& offset);
 
     /// @brief Tries to extract the HTTP version from an HTTP request.

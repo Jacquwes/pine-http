@@ -19,6 +19,11 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <WinSock2.h>
+#include <ws2def.h>
+#include <Mstcpip.h>
+#include <Mswsock.h>
+#include <ws2ipdef.h>
 #include <wsa.h>
 
 namespace pine
@@ -54,12 +59,24 @@ namespace pine
       return std::make_unexpected(socket_result.error());
     server_socket = socket_result.value();
 
+    int opt = 1;
+    // Allow the socket to be reused.
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
+               (char*)&opt, sizeof(opt));
+
+    // Increase the buffer size.
+    int socket_buffer_size = 0;
+    setsockopt(server_socket, SOL_SOCKET, SO_RCVBUF,
+               (char*)&socket_buffer_size, sizeof(socket_buffer_size));
+    setsockopt(server_socket, SOL_SOCKET, SO_SNDBUF,
+               (char*)&socket_buffer_size, sizeof(socket_buffer_size));
+
     if (const auto& bind_result = bind_socket(server_socket,
                                               address_info);
         !bind_result)
       return std::make_unexpected(bind_result.error());
 
-    if (const auto& listen_result = listen_socket(server_socket, 1000);
+    if (const auto& listen_result = listen_socket(server_socket, SOMAXCONN);
         !listen_result)
       return std::make_unexpected(listen_result.error());
 
@@ -123,16 +140,20 @@ namespace pine
 
   async_operation<void> server::remove_client(uint64_t const& client_id)
   {
-    std::unique_lock lock{ mutate_clients_mutex };
+    std::unique_lock lock{ clients_mutex_ };
 
-    if (const auto& client = clients.find(client_id);
-        client == clients.end())
+    const auto& it = clients.find(client_id);
+    if (it == clients.end())
     {
+      LOG_F(WARNING, "Attempting to remove non-existent client: % zu", client_id);
       co_return error(error_code::client_not_found,
                       "The client was not found.");
     }
-    else
-      clients.erase(client);
+
+    LOG_F(INFO, "Removing client: %zu. Remaining clients: %llu", client_id, clients.size() - 1);
+
+    auto&& client = std::move(it->second);
+    clients.erase(it);
 
     co_return{};
   }
@@ -181,29 +202,50 @@ namespace pine
 
   void server::on_accept(const iocp_operation_data* data)
   {
-    std::unique_lock lock{ mutate_clients_mutex };
-
     const auto& client_socket = data->socket;
-    const auto& client = std::make_shared<server_connection>(client_socket,
-                                                             *this);
+    LOG_F(INFO, "New client connection accepted: %zu", client_socket);
 
-    // Client will clean itself up when it is done.
-    clients[data->socket] = client;
+    const auto& client = std::make_shared<server_connection<buffer_size>>(client_socket,
+                                                                          *this);
+    {
+      std::unique_lock lock{ clients_mutex_ };
+      clients[data->socket] = client;
+      LOG_F(INFO, "Client added to the list: %zu", client_socket);
+    }
+
+    client->post_read();
+
+    iocp_.post(iocp_operation::accept, server_socket, {}, 0);
   }
 
   void server::on_read(const iocp_operation_data* data)
   {
-    const auto& client = clients.find(data->socket);
-    if (client == clients.end())
-      return;
-    client->second->on_read_raw(data);
+    std::shared_ptr<server_connection<buffer_size>> client;
+    {
+      std::shared_lock lock{ clients_mutex_ };
+
+      const auto& it = clients.find(data->socket);
+      if (it == clients.end())
+        return;
+      client = it->second;
+    }
+    client->on_read_raw(data);
   }
 
   void server::on_write(const iocp_operation_data* data)
   {
-    const auto& client = clients.find(data->socket);
-    if (client == clients.end())
-      return;
-    client->second->on_write_raw(data);
+    std::shared_ptr<server_connection<buffer_size>> client;
+    {
+      std::shared_lock lock{ clients_mutex_ };
+
+      const auto& it = clients.find(data->socket);
+      if (it == clients.end())
+      {
+        LOG_F(WARNING, "Client not found: %zu", data->socket);
+        return;
+      }
+      client = it->second;
+    }
+    client->on_write_raw(data);
   }
 }

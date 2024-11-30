@@ -27,17 +27,17 @@ namespace pine
     /// @param headers The headers of the request.
     /// @param body The body of the request.
     explicit http_request(pine::http_method method,
-                          const std::string& uri,
+                          std::string_view _viewuri,
                           pine::http_version version,
-                          const std::map<std::string, std::string>& headers,
-                          const std::string& body);
+                          const std::unordered_map<std::string, std::string_view>& headers,
+                          std::string_view _viewbody);
 
     /// @brief Parses an HTTP request from a string.
     /// @param request The string representation of the request.
     /// @return An expected object containing the parsed HTTP request or an
     /// error code.
     static std::expected<http_request, pine::error>
-      parse(const std::string& request);
+      parse(std::string_view request);
 
     /// @brief Adds a path parameter to the HTTP request.
     /// @param name The name of the path parameter.
@@ -49,7 +49,7 @@ namespace pine
 
     /// @brief Gets the body of the HTTP request.
     /// @return The body of the request.
-    constexpr const std::string& get_body() const
+    constexpr std::string_view get_body() const
     {
       return this->body;
     }
@@ -57,11 +57,11 @@ namespace pine
     /// @brief Gets the value of the specified header from the HTTP request.
     /// @param name The name of the header.
     /// @return The value of the header.
-    const std::string& get_header(const std::string& name) const;
+    std::string_view get_header(const std::string& name) const;
 
     /// @brief Gets the headers of the HTTP request.
     /// @return The headers of the request.
-    constexpr const std::map<std::string, std::string>& get_headers() const
+    constexpr const std::unordered_map<std::string, std::string_view>& get_headers() const
     {
       return this->headers;
     }
@@ -111,7 +111,7 @@ namespace pine
 
     /// @brief Gets the URI of the request.
     /// @return The URI.
-    constexpr const std::string& get_uri() const
+    constexpr std::string_view get_uri() const
     {
       return this->uri;
     }
@@ -145,9 +145,9 @@ namespace pine
     /// @brief Sets the value of the specified header in the HTTP request.
     /// @param name The name of the header.
     /// @param value The value of the header.
-    void set_header(const std::string& name, const std::string& value)
+    void set_header(std::string_view name, std::string_view value)
     {
-      this->headers.insert_or_assign(name, value);
+      this->headers.insert_or_assign(std::string(name), value);
     }
 
     /// @brief Sets the HTTP method of the request.
@@ -175,7 +175,7 @@ namespace pine
     pine::http_method method = pine::http_method::get;
     std::string uri;
     pine::http_version version = pine::http_version::http_1_1;
-    std::map<std::string, std::string> headers;
+    std::unordered_map<std::string, std::string_view> headers;
     std::string body;
     std::unordered_map<std::string, std::string_view> path_params;
   };

@@ -9,7 +9,7 @@
 int main(int argc, char** argv)
 {
   loguru::init(argc, argv);
-  loguru::g_stderr_verbosity = 1;
+  loguru::g_stderr_verbosity = -1;
 
   // Create a server on port 27015.
   pine::server server("27015");
