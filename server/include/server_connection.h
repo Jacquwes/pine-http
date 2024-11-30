@@ -48,8 +48,8 @@ namespace pine
     /// @param request The request that caused the error.
     /// @param response The response.
     void handle_error(http_status status,
-                      const http_request& request,
-                      http_response& response) const
+      const http_request& request,
+      http_response& response) const
     {
       const auto& handler = server.error_handlers[status];
 
@@ -114,7 +114,7 @@ namespace pine
 
       // The response has been sent, so close the connection.
       if (!this->write_pending)
-        close();
+      close();
     }
 
     /// @brief Send an HTTP response.
@@ -124,6 +124,8 @@ namespace pine
     {
       auto self = server_connection<buffer_size>::shared_from_this();
       std::string response_string = response.to_string();
+      struct linger lo = { 1, 0 };
+      setsockopt(this->get_socket(), SOL_SOCKET, SO_LINGER, (char*)&lo, sizeof(lo));
       connection<buffer_size>::post_write(response_string);
     }
 
