@@ -26,6 +26,8 @@
 namespace pine
 {
   class iocp_operation_data;
+  template <size_t buffer_size>
+  class server_connection;
 
   /// @brief A server that accepts connections from clients.
   class server
