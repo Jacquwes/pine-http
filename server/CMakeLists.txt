@@ -10,7 +10,7 @@ target_sources(server
     "src/route_node.cpp"
     "src/route_tree.cpp" 
     "src/server.cpp"
-    "src/server_connection.cpp"
+    
 
   PUBLIC
     "include/route_node.h" 

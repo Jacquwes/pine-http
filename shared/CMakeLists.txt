@@ -15,20 +15,20 @@ target_sources(shared
     "include/http_request.h"
     "include/http_response.h"
     "include/iocp.h"
-    "include/snowflake.h"
-    "include/thread_pool.h"
+    
+    
     "include/wsa.h"
 
-    "src/connection.cpp"
+    
     "src/error.cpp"
     "src/http.cpp"
     "src/http_request.cpp"
     "src/http_response.cpp"
     "src/iocp.cpp"
-    "src/snowflake.cpp"
-    "src/thread_pool.cpp"
+    
+    
     "src/wsa.cpp"
-)
+ "include/thread_pool.h" "src/thread_pool.cpp")
 
 target_include_directories(shared PUBLIC include)
 

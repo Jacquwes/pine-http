@@ -13,10 +13,10 @@
 #include <initializer_list>
 #include <iocp.h>
 #include <memory>
-#include <mutex>
 #include <route_node.h>
 #include <route_path.h>
 #include <route_tree.h>
+#include <shared_mutex>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
@@ -30,6 +30,7 @@ namespace pine
   /// @brief A server that accepts connections from clients.
   class server
   {
+    template <size_t buffer_size>
     friend class server_connection;
     friend class iocp_context;
 
@@ -85,6 +86,8 @@ namespace pine
       get_route(std::string_view path) const;
 
   private:
+    static constexpr size_t buffer_size = 64 * 1024;
+
     /// @brief Accept clients.
     /// This function waits for clients to connect and creates a server
     /// connection for each client.
@@ -94,10 +97,9 @@ namespace pine
 
     iocp_context iocp_;
 
-    std::mutex delete_clients_mutex;
-    std::mutex mutate_clients_mutex;
+    std::shared_mutex clients_mutex_;
 
-    std::unordered_map<uint64_t, std::shared_ptr<server_connection>> clients;
+    std::unordered_map<uint64_t, std::shared_ptr<server_connection<buffer_size>>> clients;
     std::unordered_map<http_status, callback_function> error_handlers;
 
     route_tree routes;

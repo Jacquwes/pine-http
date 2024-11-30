@@ -40,11 +40,12 @@ namespace pine
               "\tiocp                             = %d\n"
               "\tsocket                           = %d\n"
               "\tWSAGetLastError                  = %d\n"
+              "\tGetLastError                     = %d\n"
               "\tGetQueuedCompletionStatusresult  = %x\n"
               "\toverlapped                       = %x\n"
               "\tbytes_transferred                = %d\n"
               "\tcompletion_key                   = %d\n",
-              iocp, socket, GetLastError(), result, overlapped, bytes_transferred, completion_key);
+              iocp, socket, WSAGetLastError(), GetLastError(), result, overlapped, bytes_transferred, completion_key);
         break;
       }
 
@@ -59,7 +60,6 @@ namespace pine
         LOG_F(1, "Worker thread accepted a connection");
         context->associate(data->socket);
         context->on_accept_(data);
-        context->post_accept(socket, data->wsa_buffer, data->flags);
         break;
       case read:
         LOG_F(1, "Worker thread read data");
@@ -157,11 +157,15 @@ namespace pine
     SYSTEM_INFO system_info;
     GetSystemInfo(&system_info);
 
-    auto thread_args = new thread_data{ iocp_, socket, this };
-    for (DWORD i = 0; i < system_info.dwNumberOfProcessors; i++)
+    for (DWORD i = 0; i < system_info.dwNumberOfProcessors * 2; i++)
     {
-      std::thread(worker_thread, thread_args).detach();
-      //CreateThread(nullptr, 0, worker_thread, &data, 0, nullptr);
+      auto thread_args = new thread_data{ iocp_, socket, this };
+      this->threads_.emplace_back(worker_thread, thread_args);
+    }
+
+    for (auto& thread : threads_)
+    {
+      SetThreadPriority(thread.native_handle(), THREAD_PRIORITY_HIGHEST);
     }
 
     LOG_F(1, "Thread pool created with %d threads", system_info.dwNumberOfProcessors);
