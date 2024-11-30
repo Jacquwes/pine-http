@@ -37,15 +37,14 @@ namespace pine
     virtual void close()
     {
       if (bool expected = false;
-          is_closed.compare_exchange_strong(expected, true))
+        is_closed.compare_exchange_strong(expected, true))
         return;
 
-      if (socket_ != INVALID_SOCKET)
-      {
-        shutdown(socket_, SD_BOTH);
-        closesocket(socket_);
-        socket_ = INVALID_SOCKET;
-      }
+      if (socket_ == INVALID_SOCKET)
+        return;
+
+      closesocket(socket_);
+      socket_ = INVALID_SOCKET;
     }
 
     /// @brief Get the socket of the connection. 
@@ -86,8 +85,8 @@ namespace pine
         if (message_size_ >= buffer_size)
         {
           LOG_F(WARNING,
-                "Connection %zu tried to send a message that was too large",
-                get_socket());
+            "Connection %zu tried to send a message that was too large",
+            get_socket());
           close();
           return;
         }
@@ -179,9 +178,9 @@ namespace pine
     std::mutex write_mutex;
   private:
     /// @brief The socket of the connection.
-  #ifdef _WIN32
+#ifdef _WIN32
     SOCKET socket_;
-  #endif // _WIN32
+#endif // _WIN32
 
     iocp_context& context_;
 
