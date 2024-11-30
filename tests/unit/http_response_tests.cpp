@@ -11,7 +11,7 @@ TEST_SUITE("HTTP Response")
     http_response response;
     response.set_body("Hello, World!");
 
-    CHECK("Hello, World!" == response.get_body());
+    CHECK(response.get_body().compare("Hello, World!") == 0);
   }
 
   TEST_CASE("http_response::set_header_and_get_header")
@@ -19,7 +19,7 @@ TEST_SUITE("HTTP Response")
     http_response response;
     response.set_header("Content-Type", "application/json");
 
-    CHECK("application/json" == response.get_header("Content-Type"));
+    CHECK(response.get_header("Content-Type").compare("application/json") == 0);
   }
 
   TEST_CASE("http_response::set_headers_and_get_headers")
@@ -30,8 +30,8 @@ TEST_SUITE("HTTP Response")
 
     const auto& headers = response.get_headers();
 
-    CHECK("application/json" == headers.at("Content-Type"));
-    CHECK("100" == headers.at("Content-Length"));
+    CHECK(headers.at("Content-Type").compare("application/json") == 0);
+    CHECK(headers.at("Content-Length").compare("100") == 0);
   }
 
   TEST_CASE("http_response::set_status_and_get_status")

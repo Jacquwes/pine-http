@@ -9,29 +9,29 @@ TEST_SUITE("HTTP Tests")
 {
   TEST_CASE("http::http_method_strings")
   {
-    CHECK("GET" == http_method_strings.at(http_method::get));
-    CHECK("HEAD" == http_method_strings.at(http_method::head));
-    CHECK("POST" == http_method_strings.at(http_method::post));
-    CHECK("PUT" == http_method_strings.at(http_method::put));
-    CHECK("DELETE" == http_method_strings.at(http_method::delete_));
-    CHECK("CONNECT" == http_method_strings.at(http_method::connect));
-    CHECK("OPTIONS" == http_method_strings.at(http_method::options));
-    CHECK("TRACE" == http_method_strings.at(http_method::trace));
-    CHECK("PATCH" == http_method_strings.at(http_method::patch));
+    CHECK(http_method_strings.at(http_method::get).compare("GET") == 0);
+    CHECK(http_method_strings.at(http_method::head).compare("HEAD") == 0);
+    CHECK(http_method_strings.at(http_method::post).compare("POST") == 0);
+    CHECK(http_method_strings.at(http_method::put).compare("PUT") == 0);
+    CHECK(http_method_strings.at(http_method::delete_).compare("DELETE") == 0);
+    CHECK(http_method_strings.at(http_method::connect).compare("CONNECT") == 0);
+    CHECK(http_method_strings.at(http_method::options).compare("OPTIONS") == 0);
+    CHECK(http_method_strings.at(http_method::trace).compare("TRACE") == 0);
+    CHECK(http_method_strings.at(http_method::patch).compare("PATCH") == 0);
   }
 
   TEST_CASE("http::http_status_strings")
   {
-    CHECK("OK" == http_status_strings.at(http_status::ok));
-    CHECK("Bad Request" == http_status_strings.at(http_status::bad_request));
-    CHECK("Not Found" == http_status_strings.at(http_status::not_found));
-    CHECK("Internal Server Error" == http_status_strings.at(http_status::internal_server_error));
-    CHECK("Method Not Allowed" == http_status_strings.at(http_status::method_not_allowed));
+    CHECK(http_status_strings.at(http_status::ok).compare("OK") == 0);
+    CHECK(http_status_strings.at(http_status::bad_request).compare("Bad Request") == 0);
+    CHECK(http_status_strings.at(http_status::not_found).compare("Not Found") == 0);
+    CHECK(http_status_strings.at(http_status::internal_server_error).compare("Internal Server Error") == 0);
+    CHECK(http_status_strings.at(http_status::method_not_allowed).compare("Method Not Allowed") == 0);
   }
 
   TEST_CASE("http::http_version_strings")
   {
-    CHECK("HTTP/1.1" == http_version_strings.at(http_version::http_1_1));
+    CHECK(http_version_strings.at(http_version::http_1_1).compare("HTTP/1.1") == 0);
   }
 
   TEST_CASE("http_utils::try_get_body")
@@ -40,7 +40,7 @@ TEST_SUITE("HTTP Tests")
     size_t offset = 47;
     auto result = http_utils::try_get_body(request, offset);
     CHECK(result.has_value());
-    CHECK("Hello World" == result.value());
+    CHECK(result.value().compare("Hello World") == 0);
   }
 
   TEST_CASE("http_utils::try_get_headers")
@@ -50,8 +50,8 @@ TEST_SUITE("HTTP Tests")
     auto result = http_utils::try_get_headers(request, offset);
     CHECK(result.has_value());
     CHECK(2 == result.value().size());
-    CHECK("example.com" == result.value().at("Host"));
-    CHECK("text/html" == result.value().at("Content-Type"));
+    CHECK(result.value().at("Host").compare("example.com") == 0);
+    CHECK(result.value().at("Content-Type").compare("text/html") == 0);
   }
 
   TEST_CASE("http_utils::try_get_header")
@@ -60,8 +60,8 @@ TEST_SUITE("HTTP Tests")
     size_t offset = 26;
     auto result = http_utils::try_get_header(request, offset);
     CHECK(result.has_value());
-    CHECK("Host" == result.value().first);
-    CHECK("example.com" == result.value().second);
+    CHECK(result.value().first.compare("Host") == 0);
+    CHECK(result.value().second.compare("example.com") == 0);
   }
 
   TEST_CASE("http_utils::try_get_method")
@@ -88,7 +88,7 @@ TEST_SUITE("HTTP Tests")
     size_t offset = 4;
     auto result = http_utils::try_get_uri(request, offset);
     CHECK(result.has_value());
-    CHECK("/index.html" == result.value());
+    CHECK(result.value().compare("/index.html") == 0);
   }
 
   TEST_CASE("http_utils::try_get_version")
