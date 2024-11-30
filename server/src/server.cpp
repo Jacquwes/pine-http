@@ -64,31 +64,12 @@ namespace pine
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
                (char*)&opt, sizeof(opt));
 
-    // Disable Nagle's algorithm.
-    setsockopt(server_socket, IPPROTO_TCP, TCP_NODELAY,
-               (char*)&opt, sizeof(opt));
-
-    linger linger_options = { 1, 0 };
-    setsockopt(server_socket, SOL_SOCKET, SO_LINGER,
-               (char*)&linger_options, sizeof(linger_options));
-
     // Increase the buffer size.
     int socket_buffer_size = 0;
     setsockopt(server_socket, SOL_SOCKET, SO_RCVBUF,
                (char*)&socket_buffer_size, sizeof(socket_buffer_size));
     setsockopt(server_socket, SOL_SOCKET, SO_SNDBUF,
                (char*)&socket_buffer_size, sizeof(socket_buffer_size));
-
-    // Enable TCP Fast Open.
-    int fast_open = 20;
-    setsockopt(server_socket, IPPROTO_TCP, TCP_FASTOPEN,
-               (char*)&fast_open, sizeof(fast_open));
-
-    // Enable keep-alive.
-    DWORD keep_alive = 1;
-    tcp_keepalive alive = { 1, 10000, 1000 };
-    WSAIoctl(server_socket, SIO_KEEPALIVE_VALS, &alive, sizeof(alive),
-             nullptr, 0, &keep_alive, nullptr, nullptr);
 
     if (const auto& bind_result = bind_socket(server_socket,
                                               address_info);
@@ -259,7 +240,10 @@ namespace pine
 
       const auto& it = clients.find(data->socket);
       if (it == clients.end())
+      {
+        LOG_F(WARNING, "Client not found: %zu", data->socket);
         return;
+      }
       client = it->second;
     }
     client->on_write_raw(data);
