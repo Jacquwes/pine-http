@@ -57,11 +57,6 @@ namespace pine
       return *this;
     }
 
-    ~socket()
-    {
-      close();
-    }
-
     /// @brief Accept an incoming connection on the socket.
     /// @return The accepted socket.
     std::expected<socket, pine::error> accept() const;
