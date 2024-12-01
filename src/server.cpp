@@ -9,7 +9,7 @@
 #include <pine/http.h>
 #include <pine/http_request.h>
 #include <pine/http_response.h>
-#include <pine/iocp.h>
+#include <pine/io_processor.h>
 #include <pine/socket.h>
 #include <pine/route_node.h>
 #include <pine/route_path.h>
@@ -23,8 +23,7 @@
 namespace pine
 {
   server::server(uint16_t port)
-    : iocp_{},
-    port{ port }
+    : port{ port }
   {
     for (const auto& [status_code, status_string] : http_status_strings)
     {
@@ -52,13 +51,9 @@ namespace pine
 
     LOG_F(INFO, "Server socket initialized. Will start receiving requests soon.");
 
-    iocp_.init(server_socket);
-    iocp_.set_on_accept([this](const pine::iocp_operation_data* data) { on_accept(data); });
-    iocp_.set_on_read([this](const pine::iocp_operation_data* data) { on_read(data); });
-    iocp_.set_on_write([this](const pine::iocp_operation_data* data) { on_write(data); });
-    iocp_.associate(server_socket);
+    io_processor::instance().associate(server_socket.get());
 
-    LOG_F(INFO, "IOCP initialized.");
+    LOG_F(INFO, "IO processor initialized.");
 
     if (const auto& accept_result = accept_clients();
         !accept_result)
@@ -96,9 +91,12 @@ namespace pine
 
     for (size_t i = 0; i < 10; i++)
     {
-      if (!iocp_.post(iocp_operation::accept, server_socket, {}, 0))
-        return std::make_unexpected(error(error_code::iocp_error,
-                                          "Failed to post accept operation: " + std::to_string(WSAGetLastError())));
+      auto ctx = std::make_unique<accept_context>();
+      ctx->server = this;
+
+      if (auto result = io_processor::instance().post_accept(std::move(ctx));
+          !result)
+        return result;
     }
 
     return {};
@@ -162,52 +160,25 @@ namespace pine
     return routes.find_route(path);
   }
 
-  void server::on_accept(const iocp_operation_data* data)
+  void server::on_accept(const accept_context& ctx)
   {
-    const auto& client_socket = data->socket;
+    auto&& client_socket = ctx.client_socket;
     LOG_F(INFO, "New client connection accepted: %zu", client_socket);
 
-    const auto& client = std::make_shared<server_connection<buffer_size>>(client_socket,
-                                                                          *this);
+    const auto& client = std::make_shared<server_connection>(client_socket,
+                                                             *this);
     {
       std::unique_lock lock{ clients_mutex_ };
-      clients[data->socket] = client;
+      static uint64_t client_id = 0;
+      clients[client->get_socket()] = client;
       LOG_F(INFO, "Client added to the list: %zu", client_socket);
     }
 
     client->post_read();
 
-    iocp_.post(iocp_operation::accept, server_socket, {}, 0);
-  }
+    auto new_ctx = std::make_unique<accept_context>();
+    new_ctx->server = this;
 
-  void server::on_read(const iocp_operation_data* data)
-  {
-    std::shared_ptr<server_connection<buffer_size>> client;
-    {
-      std::shared_lock lock{ clients_mutex_ };
-
-      const auto& it = clients.find(data->socket);
-      if (it == clients.end())
-        return;
-      client = it->second;
-    }
-    client->on_read_raw(data);
-  }
-
-  void server::on_write(const iocp_operation_data* data)
-  {
-    std::shared_ptr<server_connection<buffer_size>> client;
-    {
-      std::shared_lock lock{ clients_mutex_ };
-
-      const auto& it = clients.find(data->socket);
-      if (it == clients.end())
-      {
-        LOG_F(WARNING, "Client not found: %zu", data->socket);
-        return;
-      }
-      client = it->second;
-    }
-    client->on_write_raw(data);
+    io_processor::instance().post_accept(std::make_unique<accept_context>(new_ctx));
   }
 }

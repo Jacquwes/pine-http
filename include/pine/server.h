@@ -5,12 +5,13 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <pine/context.h>
 #include <pine/error.h>
 #include <pine/expected.h>
 #include <pine/http.h>
 #include <pine/http_request.h>
 #include <pine/http_response.h>
-#include <pine/iocp.h>
+#include <pine/io_processor.h>
 #include <pine/socket.h>
 #include <pine/route_node.h>
 #include <pine/route_path.h>
@@ -23,14 +24,12 @@
 
 namespace pine
 {
-  class iocp_operation_data;
   class server_connection;
 
   /// @brief A server that accepts connections from clients.
   class server
   {
     friend class server_connection;
-    friend class iocp_context;
 
   public:
     using callback_function = std::function<void(const http_request&, http_response&)>;
@@ -91,8 +90,6 @@ namespace pine
     /// listening.
     std::expected<void, pine::error> accept_clients();
 
-    iocp_context iocp_;
-
     std::shared_mutex clients_mutex_;
 
     std::unordered_map<uint64_t, std::shared_ptr<server_connection>> clients;
@@ -111,13 +108,8 @@ namespace pine
     std::jthread acceptor_thread;
     std::jthread delete_clients_thread;
 
+    friend class io_processor;
     /// @brief Handle an accept operation.
-    void on_accept(const iocp_operation_data*);
-
-    /// @brief Handle a read operation.
-    void on_read(const iocp_operation_data*);
-
-    /// @brief Handle a write operation.
-    void on_write(const iocp_operation_data*);
+    void on_accept(const accept_context& ctx);
   };
 }
