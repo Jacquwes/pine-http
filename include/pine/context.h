@@ -13,14 +13,14 @@ namespace pine
 
   struct read_context
   {
-    connection* connection;
+    connection* conn;
     const char* buffer;
     size_t size;
   };
 
   struct write_context
   {
-    connection* connection;
+    connection* conn;
     const char* buffer;
     size_t size;
   };
