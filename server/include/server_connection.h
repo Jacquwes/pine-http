@@ -5,6 +5,7 @@
 #include <http_request.h>
 #include <http_response.h>
 #include <memory>
+#include <pine_socket.h>
 
 namespace pine
 {
@@ -19,8 +20,8 @@ namespace pine
 
   public:
     /// @brief Construct a server connection with the given socket and server.
-    explicit server_connection(SOCKET socket, pine::server& server)
-      : connection(socket, server.iocp_),
+    explicit server_connection(socket&& socket, pine::server& server)
+      : connection(std::move(socket), server.iocp_),
       server(server)
     {}
 
@@ -123,8 +124,6 @@ namespace pine
     {
       auto self = server_connection::shared_from_this();
       std::string response_string = response.to_string();
-      struct linger lo = { 1, 0 };
-      setsockopt(this->get_socket(), SOL_SOCKET, SO_LINGER, (char*)&lo, sizeof(lo));
       connection::post_write(response_string);
     }
 

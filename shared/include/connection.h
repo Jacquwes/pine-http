@@ -11,10 +11,6 @@
 #include <string_view>
 #include <vector>
 
-#ifdef _WIN32
-#include <WinSock2.h>
-#endif // _WIN32
-
 
 namespace pine
 {
@@ -24,8 +20,8 @@ namespace pine
     static constexpr size_t buffer_size = 64 * 1024;
 
   public:
-    explicit connection(SOCKET socket, iocp_context& context)
-      : socket_(socket),
+    explicit connection(socket&& socket, iocp_context& context)
+      : socket_{ std::move(socket) },
       context_(context)
     {}
 
@@ -39,21 +35,17 @@ namespace pine
     virtual void close()
     {
       if (bool expected = false;
-        is_closed.compare_exchange_strong(expected, true))
+          is_closed.compare_exchange_strong(expected, true))
         return;
 
-      if (socket_ == INVALID_SOCKET)
-        return;
-
-      closesocket(socket_);
-      socket_ = INVALID_SOCKET;
+      socket_.close();
     }
 
     /// @brief Get the socket of the connection. 
     /// @return The socket of the connection.
-    SOCKET get_socket() const
+    constexpr socket_t get_socket() const
     {
-      return socket_;
+      return socket_.get();
     }
 
     /// @brief This function is called when a message is received.
@@ -87,8 +79,8 @@ namespace pine
         if (message_size_ >= buffer_size)
         {
           LOG_F(WARNING,
-            "Connection %zu tried to send a message that was too large",
-            get_socket());
+                "Connection %zu tried to send a message that was too large",
+                get_socket());
           close();
           return;
         }
@@ -180,9 +172,7 @@ namespace pine
     std::mutex write_mutex;
   private:
     /// @brief The socket of the connection.
-#ifdef _WIN32
-    SOCKET socket_;
-#endif // _WIN32
+    socket socket_;
 
     iocp_context& context_;
 

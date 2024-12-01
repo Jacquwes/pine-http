@@ -66,7 +66,7 @@ namespace pine
     /// @return The accepted socket.
     std::expected<socket, pine::error> accept() const;
 
-    /// @brief Close the socket.
+    /// @brief Close the socket if it is open.
     void close();
 
     /// @brief Create a new socket.
