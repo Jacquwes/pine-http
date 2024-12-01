@@ -30,7 +30,8 @@ namespace pine
   using socket_t = int;
 #endif
 
-  constexpr auto invalid_socket = -1;
+  constexpr static int invalid_socket;
+  constexpr static int max_connections;
 
   /// @brief Socket wrapper functions.
   class socket

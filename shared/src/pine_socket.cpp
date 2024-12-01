@@ -20,6 +20,9 @@
 
 namespace pine
 {
+  static constexpr int invalid_socket = -1;
+  static constexpr int max_connections = SOMAXCONN;
+
   std::expected<socket, pine::error> socket::accept() const
   {
     socket client;
