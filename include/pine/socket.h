@@ -3,6 +3,7 @@
 #include <any>
 #include <pine/expected.h>
 #include <pine/error.h>
+#include <cstdint>
 
 namespace pine
 {
@@ -30,8 +31,7 @@ namespace pine
   using socket_t = int;
 #endif
 
-  constexpr static int invalid_socket;
-  constexpr static int max_connections;
+  constexpr int invalid_socket = -1;
 
   /// @brief Socket wrapper functions.
   class socket
