@@ -1,9 +1,9 @@
 #pragma once
 
 #include <any>
-#include <pine/expected.h>
-#include <pine/error.h>
 #include <cstdint>
+#include <pine/error.h>
+#include <pine/expected.h>
 
 namespace pine
 {
