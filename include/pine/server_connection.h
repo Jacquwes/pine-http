@@ -5,7 +5,7 @@
 #include <pine/connection.h>
 #include <pine/http_request.h>
 #include <pine/http_response.h>
-#include <pine/pine_socket.h>
+#include <pine/socket.h>
 
 namespace pine
 {

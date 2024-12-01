@@ -14,7 +14,7 @@
 #include <loguru.hpp>
 #include <pine/error.h>
 #include <pine/expected.h>
-#include <pine/pine_socket.h>
+#include <pine/socket.h>
 #include <string>
 
 namespace pine
