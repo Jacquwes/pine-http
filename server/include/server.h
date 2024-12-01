@@ -25,13 +25,11 @@
 namespace pine
 {
   class iocp_operation_data;
-  template <size_t buffer_size>
   class server_connection;
 
   /// @brief A server that accepts connections from clients.
   class server
   {
-    template <size_t buffer_size>
     friend class server_connection;
     friend class iocp_context;
 
@@ -87,8 +85,6 @@ namespace pine
       get_route(std::string_view path) const;
 
   private:
-    static constexpr size_t buffer_size = 64 * 1024;
-
     /// @brief Accept clients.
     /// This function waits for clients to connect and creates a server
     /// connection for each client.
@@ -100,7 +96,7 @@ namespace pine
 
     std::shared_mutex clients_mutex_;
 
-    std::unordered_map<uint64_t, std::shared_ptr<server_connection<buffer_size>>> clients;
+    std::unordered_map<uint64_t, std::shared_ptr<server_connection>> clients;
     std::unordered_map<http_status, callback_function> error_handlers;
 
     route_tree routes;

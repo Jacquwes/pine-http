@@ -11,17 +11,16 @@ namespace pine
   class server;
 
   /// @brief A connection to a client.
-  template <size_t buffer_size>
   class server_connection
-    : public connection<buffer_size>,
-    public std::enable_shared_from_this<server_connection<buffer_size>>
+    : public connection,
+    public std::enable_shared_from_this<server_connection>
   {
     friend class server;
 
   public:
     /// @brief Construct a server connection with the given socket and server.
     explicit server_connection(SOCKET socket, pine::server& server)
-      : connection<buffer_size>(socket, server.iocp_),
+      : connection(socket, server.iocp_),
       server(server)
     {}
 
@@ -36,10 +35,10 @@ namespace pine
       std::lock_guard write_lock{ this->write_mutex };
       std::lock_guard read_lock{ this->read_mutex };
 
-      connection<buffer_size>::close();
+      connection::close();
 
-      auto self = server_connection<buffer_size>::shared_from_this();
-      server.remove_client(connection<buffer_size>::get_socket());
+      auto self = server_connection::shared_from_this();
+      server.remove_client(connection::get_socket());
     }
 
     /// @brief Handle an error. This function will modify the response to
@@ -91,7 +90,7 @@ namespace pine
     /// @param data The data to read.
     void on_read(std::string_view message) override
     {
-      auto self = server_connection<buffer_size>::shared_from_this();
+      auto self = server_connection::shared_from_this();
       auto request_result = http_request::parse(message);
       if (!request_result)
       {
@@ -110,7 +109,7 @@ namespace pine
     void on_write() override
     {
       auto self =
-        server_connection<buffer_size>::shared_from_this();
+        server_connection::shared_from_this();
 
       // The response has been sent, so close the connection.
       if (!this->write_pending)
@@ -122,11 +121,11 @@ namespace pine
     /// @return An asynchronous task completed when the response has been sent.
     void send_response(http_response const& response)
     {
-      auto self = server_connection<buffer_size>::shared_from_this();
+      auto self = server_connection::shared_from_this();
       std::string response_string = response.to_string();
       struct linger lo = { 1, 0 };
       setsockopt(this->get_socket(), SOL_SOCKET, SO_LINGER, (char*)&lo, sizeof(lo));
-      connection<buffer_size>::post_write(response_string);
+      connection::post_write(response_string);
     }
 
   private:

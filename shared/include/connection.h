@@ -7,6 +7,7 @@
 #include <loguru.hpp>
 #include <memory>
 #include <mutex>
+#include <pine_socket.h>
 #include <string_view>
 #include <vector>
 
@@ -18,9 +19,10 @@
 namespace pine
 {
   /// @brief A connection base class that is used by the server and the client.
-  template <size_t buffer_size>
   class connection
   {
+    static constexpr size_t buffer_size = 64 * 1024;
+
   public:
     explicit connection(SOCKET socket, iocp_context& context)
       : socket_(socket),
