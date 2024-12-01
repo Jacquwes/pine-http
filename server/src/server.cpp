@@ -11,6 +11,7 @@
 #include <iocp.h>
 #include <loguru.hpp>
 #include <memory>
+#include <pine_socket.h>
 #include <route_node.h>
 #include <route_path.h>
 #include <route_tree.h>
@@ -19,16 +20,10 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <WinSock2.h>
-#include <ws2def.h>
-#include <Mstcpip.h>
-#include <Mswsock.h>
-#include <ws2ipdef.h>
-#include <wsa.h>
 
 namespace pine
 {
-  server::server(const char* port)
+  server::server(uint16_t port)
     : iocp_{},
     port{ port }
   {
@@ -45,38 +40,12 @@ namespace pine
 
   std::expected<void, error> server::start()
   {
-    if (const auto& init_result = initialize_wsa();
-        !init_result)
-      return std::make_unexpected(init_result.error());
-
-    const auto& get_address_result = get_address_info(nullptr, port);
-    if (!get_address_result)
-      return std::make_unexpected(get_address_result.error());
-    address_info = get_address_result.value();
-
-    const auto& socket_result = create_socket(address_info);
+    auto socket_result = socket::create(port);
     if (!socket_result)
       return std::make_unexpected(socket_result.error());
-    server_socket = socket_result.value();
+    server_socket = std::move(socket_result.value());
 
-    int opt = 1;
-    // Allow the socket to be reused.
-    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
-               (char*)&opt, sizeof(opt));
-
-    // Increase the buffer size.
-    int socket_buffer_size = 0;
-    setsockopt(server_socket, SOL_SOCKET, SO_RCVBUF,
-               (char*)&socket_buffer_size, sizeof(socket_buffer_size));
-    setsockopt(server_socket, SOL_SOCKET, SO_SNDBUF,
-               (char*)&socket_buffer_size, sizeof(socket_buffer_size));
-
-    if (const auto& bind_result = bind_socket(server_socket,
-                                              address_info);
-        !bind_result)
-      return std::make_unexpected(bind_result.error());
-
-    if (const auto& listen_result = listen_socket(server_socket, SOMAXCONN);
+    if (const auto& listen_result = server_socket.listen(max_connections);
         !listen_result)
       return std::make_unexpected(listen_result.error());
 
@@ -107,9 +76,7 @@ namespace pine
 
     LOG_F(INFO, "Stopping server.");
 
-    close_socket(server_socket);
-
-    delete address_info;
+    server_socket.close();
 
     for (const auto& [id, client] : clients)
     {

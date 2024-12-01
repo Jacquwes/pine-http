@@ -1,6 +1,5 @@
 #pragma once
 
-#include <WinSock2.h>
 #include <coroutine.h>
 #include <cstdint>
 #include <error.h>
@@ -13,6 +12,7 @@
 #include <initializer_list>
 #include <iocp.h>
 #include <memory>
+#include <pine_socket.h>
 #include <route_node.h>
 #include <route_path.h>
 #include <route_tree.h>
@@ -21,7 +21,6 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <ws2def.h>
 
 namespace pine
 {
@@ -40,7 +39,7 @@ namespace pine
     using callback_function = std::function<void(const http_request&, http_response&)>;
 
     /// @brief Construct a server with the given asio context and port.
-    explicit server(const char* port = "80");
+    explicit server(uint16_t port = 80);
 
     /// @brief Start listening for connections.
     std::expected<void, pine::error> start();
@@ -106,13 +105,12 @@ namespace pine
 
     route_tree routes;
 
-    const char* port;
-  #ifdef _WIN32
-    SOCKET server_socket = INVALID_SOCKET;
-    addrinfo* address_info = nullptr;
-  #else
-    int server_socket = -1;
-  #endif
+    uint16_t port{};
+    socket server_socket{};
+
+#ifdef _WIN32
+    wsa_guard wsa{};
+#endif
 
     bool is_listening = false;
     std::jthread acceptor_thread;
