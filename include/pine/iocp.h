@@ -2,10 +2,10 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-#include <MSWSock.h>
-#include <Windows.h>
+#include <pine/WinSock2.h>
+#include <pine/WS2tcpip.h>
+#include <pine/MSWSock.h>
+#include <pine/Windows.h>
 #include <array>
 #include <bit>
 #include <coroutine>

@@ -1,7 +1,6 @@
 #include <doctest/doctest.h>
-
-#include "error.h"
-#include "http_request.h"
+#include <pine/error.h>
+#include <pine/http_request.h>
 
 TEST_SUITE("HTTP Request")
 {

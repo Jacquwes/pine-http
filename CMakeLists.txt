@@ -43,9 +43,9 @@ target_sources(pine
     "src/route_tree.cpp" 
     "src/server.cpp"
     "src/thread_pool.cpp"
-)
+ "include/pine/context.h" "include/pine/io_processor.h")
 
-target_include_directories(pine PUBLIC "include/pine")
+target_include_directories(pine PUBLIC "include")
 
 target_link_libraries(pine PUBLIC loguru::loguru)
 if (WIN32)

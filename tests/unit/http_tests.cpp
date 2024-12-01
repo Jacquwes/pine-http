@@ -1,7 +1,6 @@
 #include <doctest/doctest.h>
 
-#include "error.h"
-#include "http.h"
+#include <pine/http.h>
 
 using namespace pine;
 

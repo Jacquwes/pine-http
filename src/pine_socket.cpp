@@ -1,9 +1,9 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <WS2tcpip.h>
-#include <WinSock2.h>
 #include <Windows.h>
+#include <WinSock2.h>
 #include <ws2def.h>
+#include <WS2tcpip.h>
 #else
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -11,12 +11,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #endif
-
-#include <pine_socket.h>
-#include <expected.h>
-#include <string>
-#include <error.h>
 #include <loguru.hpp>
+#include <pine/error.h>
+#include <pine/expected.h>
+#include <pine/pine_socket.h>
+#include <string>
 
 namespace pine
 {

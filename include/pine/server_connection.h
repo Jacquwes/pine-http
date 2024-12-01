@@ -1,11 +1,11 @@
 #pragma once
 
 #include <atomic>
-#include <connection.h>
-#include <http_request.h>
-#include <http_response.h>
 #include <memory>
-#include <pine_socket.h>
+#include <pine/connection.h>
+#include <pine/http_request.h>
+#include <pine/http_response.h>
+#include <pine/pine_socket.h>
 
 namespace pine
 {
