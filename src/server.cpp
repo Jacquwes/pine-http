@@ -44,7 +44,7 @@ namespace pine
       return std::make_unexpected(socket_result.error());
     server_socket = std::move(socket_result.value());
 
-    if (const auto& listen_result = server_socket.listen(max_connections);
+    if (const auto& listen_result = server_socket.listen();
         !listen_result)
       return std::make_unexpected(listen_result.error());
 

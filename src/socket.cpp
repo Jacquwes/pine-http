@@ -113,9 +113,9 @@ namespace pine
     return s;
   }
 
-  std::expected<void, pine::error> socket::listen(int backlog) const
+  std::expected<void, pine::error> socket::listen() const
   {
-    if (::listen(fd_, backlog) < 0)
+    if (::listen(fd_, max_connections) < 0)
     {
       LOG_F(ERROR, "Failed to listen on socket: %d", errno);
       return std::make_unexpected(error(error_code::socket_error,

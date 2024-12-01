@@ -76,8 +76,7 @@ namespace pine
     }
 
     /// @brief Listen for incoming connections on the socket.
-    /// @param backlog The maximum length of the queue of pending connections.
-    std::expected<void, pine::error> listen(int backlog) const;
+    std::expected<void, pine::error> listen() const;
 
   private:
     /// @brief The socket file descriptor.
