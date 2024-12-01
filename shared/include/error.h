@@ -17,10 +17,12 @@ namespace pine
     method_not_allowed,
     client_not_found,
     connection_closed,
-  #ifdef _WIN32
+#ifdef _WIN32
     winsock_error,
     getaddrinfo_error,
-  #endif // _WIN32
+#else
+    socket_error,
+#endif
     coroutine_cancelled,
     path_parameter_conflict,
     invalid_parameter,
