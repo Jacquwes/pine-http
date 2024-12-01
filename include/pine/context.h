@@ -3,8 +3,13 @@
 namespace pine
 {
   struct connection;
+  struct server;
 
-  struct accept_context;
+  struct accept_context
+  {
+    server* server;
+    socket client_socket;
+  };
 
   struct read_context
   {
