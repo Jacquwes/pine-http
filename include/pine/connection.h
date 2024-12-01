@@ -5,7 +5,6 @@
 #include <memory>
 #include <mutex>
 #include <pine/context.h>
-#include <pine/coroutine.h>
 #include <pine/error.h>
 #include <pine/io_processor.h>
 #include <pine/socket.h>
