@@ -12,7 +12,7 @@ int main(int argc, char** argv)
   loguru::g_stderr_verbosity = -1;
 
   // Create a server on port 27015.
-  pine::server server("27015");
+  pine::server server(27015);
 
   server.add_error_handler(pine::http_status::not_found,
                            [](const pine::http_request&,
