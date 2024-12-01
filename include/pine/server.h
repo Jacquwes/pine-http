@@ -5,7 +5,6 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
-#include <pine/coroutine.h>
 #include <pine/error.h>
 #include <pine/expected.h>
 #include <pine/http.h>
@@ -49,7 +48,7 @@ namespace pine
     /// @param client_id Id of the client to disconnect.
     /// @return An asynchronous task completed when the client has been
     /// disconnected.
-    async_operation<void> remove_client(uint64_t const& client_id);
+    void remove_client(uint64_t const& client_id);
 
     /// @brief Add a route to the server.
     /// @param path The HTTP path to match in order to call the handler.

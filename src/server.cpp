@@ -4,7 +4,6 @@
 #include <initializer_list>
 #include <loguru.hpp>
 #include <memory>
-#include <pine/coroutine.h>
 #include <pine/error.h>
 #include <pine/expected.h>
 #include <pine/http.h>
@@ -105,7 +104,7 @@ namespace pine
     return {};
   }
 
-  async_operation<void> server::remove_client(uint64_t const& client_id)
+  void server::remove_client(uint64_t const& client_id)
   {
     std::unique_lock lock{ clients_mutex_ };
 
@@ -113,16 +112,12 @@ namespace pine
     if (it == clients.end())
     {
       LOG_F(WARNING, "Attempting to remove non-existent client: % zu", client_id);
-      co_return error(error_code::client_not_found,
-                      "The client was not found.");
     }
 
     LOG_F(INFO, "Removing client: %zu. Remaining clients: %llu", client_id, clients.size() - 1);
 
     auto&& client = std::move(it->second);
     clients.erase(it);
-
-    co_return{};
   }
 
   route_node&

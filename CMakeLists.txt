@@ -17,12 +17,13 @@ add_library(pine STATIC)
 target_sources(pine
   PUBLIC
     "include/pine/connection.h"
-    "include/pine/coroutine.h"
+    "include/pine/context.h"
     "include/pine/error.h"
     "include/pine/expected.h"
     "include/pine/http.h"
     "include/pine/http_request.h"
     "include/pine/http_response.h"
+    "include/pine/io_processor.h"
     "include/pine/iocp.h"
     "include/pine/socket.h"
     "include/pine/route_node.h" 
@@ -30,7 +31,6 @@ target_sources(pine
     "include/pine/route_path.h"
     "include/pine/server.h"
     "include/pine/server_connection.h"
-    "include/pine/thread_pool.h"
 
   PRIVATE
     "src/error.cpp"
@@ -42,8 +42,7 @@ target_sources(pine
     "src/route_node.cpp"
     "src/route_tree.cpp" 
     "src/server.cpp"
-    "src/thread_pool.cpp"
- "include/pine/context.h" "include/pine/io_processor.h")
+)
 
 target_include_directories(pine PUBLIC "include")
 
