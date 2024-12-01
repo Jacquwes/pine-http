@@ -10,8 +10,7 @@ target_sources(unit_tests
 )
 
 target_compile_features(unit_tests PRIVATE cxx_std_20)
-target_link_libraries(unit_tests PRIVATE shared)
-target_link_libraries(unit_tests PRIVATE server)
+target_link_libraries(unit_tests PRIVATE pine)
 target_link_libraries(unit_tests PRIVATE doctest::doctest)
 
 include(doctest)
