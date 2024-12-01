@@ -4,9 +4,10 @@
 #include <loguru.hpp>
 #include <memory>
 #include <mutex>
+#include <pine/context.h>
 #include <pine/coroutine.h>
 #include <pine/error.h>
-#include <pine/iocp.h>
+#include <pine/io_processor.h>
 #include <pine/socket.h>
 #include <string_view>
 #include <vector>
@@ -20,9 +21,8 @@ namespace pine
     static constexpr size_t buffer_size = 64 * 1024;
 
   public:
-    explicit connection(socket&& socket, iocp_context& context)
-      : socket_{ std::move(socket) },
-      context_(context)
+    explicit connection(socket&& socket)
+      : socket_{ std::move(socket) }
     {}
 
     /// @brief Destroy the connection.
@@ -57,16 +57,16 @@ namespace pine
 
     /// @brief Handle a read operation.
     /// @param data The data of the operation.
-    void on_read_raw(const iocp_operation_data* data)
+    void on_read_raw(const read_context& data)
     {
       read_pending = false;
 
       if (is_closed)
         return;
 
-      DWORD bytes_transferred = data->bytes_transferred;
+      size_t message_size = data.size;
       // Client closed the connection.
-      if (bytes_transferred == 0)
+      if (message_size == 0)
       {
         close();
         return;
@@ -75,7 +75,7 @@ namespace pine
       {
         std::lock_guard lock{ buffer_mutex };
 
-        message_size_ += bytes_transferred;
+        message_size_ += message_size;
         if (message_size_ >= buffer_size)
         {
           LOG_F(WARNING,
@@ -85,11 +85,7 @@ namespace pine
           return;
         }
 
-        if (data->flags & MSG_PARTIAL)
-        {
-          post_read();
-          return;
-        }
+        post_read();
 
         on_read(std::string_view{ read_buffer_.data(), message_size_ });
       }
@@ -99,14 +95,14 @@ namespace pine
 
     /// @brief Handle a write operation.
     /// @param data The data of the operation.
-    void on_write_raw(const iocp_operation_data* data)
+    void on_write_raw(const write_context& ctx)
     {
       write_pending = false;
 
       if (is_closed)
         return;
 
-      if (data->bytes_transferred == 0)
+      if (ctx.size == 0)
       {
         LOG_F(WARNING, "Connection %zu failed to write message", get_socket());
         close();
@@ -124,13 +120,15 @@ namespace pine
       if (is_closed || read_pending)
         return;
 
-      WSABUF wsa_buffer{};
-      wsa_buffer.buf = read_buffer_.data();
-      wsa_buffer.len = buffer_size;
+      auto ctx = std::make_unique<read_context>();
+      ctx->connection = this;
+      ctx->buffer = read_buffer_.data();
+      ctx->size = buffer_size;
 
-      if (!context_.post(iocp_operation::read, socket_, wsa_buffer, 0))
+      if (auto result = io_processor::instance().post_read(std::move(ctx));
+          !result)
       {
-        LOG_F(WARNING, "Failed to post read operation: %d", WSAGetLastError());
+        LOG_F(WARNING, result.error().message().data());
         close();
       }
 
@@ -149,13 +147,15 @@ namespace pine
       write_buffer_.fill(0);
       std::ranges::copy(raw_message, write_buffer_.begin());
 
-      WSABUF wsa_buffer{};
-      wsa_buffer.buf = write_buffer_.data();
-      wsa_buffer.len = static_cast<ULONG>(raw_message.size());
+      auto ctx = std::make_unique<write_context>();
+      ctx->connection = this;
+      ctx->buffer = write_buffer_.data();
+      ctx->size = raw_message.size();
 
-      if (!context_.post(iocp_operation::write, socket_, wsa_buffer, 0))
+      if (auto result = io_processor::instance().post_write(std::move(ctx));
+          !result)
       {
-        LOG_F(WARNING, "Failed to post write operation: %d", WSAGetLastError());
+        LOG_F(WARNING, result.error().message().data());
         close();
       }
 
@@ -173,8 +173,6 @@ namespace pine
   private:
     /// @brief The socket of the connection.
     socket socket_;
-
-    iocp_context& context_;
 
     std::array<char, buffer_size> read_buffer_;
     std::array<char, buffer_size> write_buffer_;
