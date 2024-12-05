@@ -40,22 +40,6 @@ namespace pine
     socket()
       : fd_{ invalid_socket }
     {}
-    socket(const socket&) = delete;
-    socket(socket&& other) noexcept
-      : fd_{ other.fd_ }
-    {
-      other.fd_ = invalid_socket;
-    }
-    socket& operator=(const socket&) = delete;
-    socket& operator=(socket&& other) noexcept
-    {
-      if (this != &other)
-      {
-        fd_ = other.fd_;
-        other.fd_ = invalid_socket;
-      }
-      return *this;
-    }
 
     /// @brief Accept an incoming connection on the socket.
     /// @return The accepted socket.
