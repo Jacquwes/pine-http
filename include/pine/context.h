@@ -1,5 +1,7 @@
 #pragma once
 
+#include <pine/socket.h>
+
 namespace pine
 {
   struct connection;
@@ -7,20 +9,20 @@ namespace pine
 
   struct accept_context
   {
-    server* server;
+    pine::server* server;
     socket client_socket;
   };
 
   struct read_context
   {
-    connection* conn;
+    pine::connection* connection;
     const char* buffer;
     size_t size;
   };
 
   struct write_context
   {
-    connection* conn;
+    pine::connection* connection;
     const char* buffer;
     size_t size;
   };

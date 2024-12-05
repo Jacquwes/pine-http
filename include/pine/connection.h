@@ -120,7 +120,7 @@ namespace pine
         return;
 
       auto ctx = std::make_unique<read_context>();
-      ctx->conn = this;
+      ctx->connection = this;
       ctx->buffer = read_buffer_.data();
       ctx->size = buffer_size;
 
@@ -147,7 +147,7 @@ namespace pine
       std::ranges::copy(raw_message, write_buffer_.begin());
 
       auto ctx = std::make_unique<write_context>();
-      ctx->conn = this;
+      ctx->connection = this;
       ctx->buffer = write_buffer_.data();
       ctx->size = raw_message.size();
 
