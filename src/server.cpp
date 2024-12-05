@@ -160,12 +160,12 @@ namespace pine
     return routes.find_route(path);
   }
 
-  void server::on_accept(const accept_context& ctx)
+  void server::on_accept(accept_context&& ctx)
   {
     auto&& client_socket = ctx.client_socket;
     LOG_F(INFO, "New client connection accepted: %zu", client_socket);
 
-    const auto& client = std::make_shared<server_connection>(client_socket,
+    const auto& client = std::make_shared<server_connection>(std::move(client_socket),
                                                              *this);
     {
       std::unique_lock lock{ clients_mutex_ };
@@ -179,6 +179,6 @@ namespace pine
     auto new_ctx = std::make_unique<accept_context>();
     new_ctx->server = this;
 
-    io_processor::instance().post_accept(std::make_unique<accept_context>(new_ctx));
+    io_processor::instance().post_accept(std::move(new_ctx));
   }
 }

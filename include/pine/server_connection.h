@@ -21,7 +21,7 @@ namespace pine
   public:
     /// @brief Construct a server connection with the given socket and server.
     explicit server_connection(socket&& socket, pine::server& server)
-      : connection(std::move(socket), server.iocp_),
+      : connection(std::move(socket)),
       server(server)
     {}
 
@@ -129,7 +129,7 @@ namespace pine
 
   private:
     /// @brief The server that the connection is connected to.
-    server& server;
+    pine::server& server;
 
     /// @brief Whether the connection is pending close.
     std::atomic_bool pending_close = false;

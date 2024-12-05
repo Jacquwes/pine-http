@@ -110,6 +110,6 @@ namespace pine
 
     friend class io_processor;
     /// @brief Handle an accept operation.
-    void on_accept(const accept_context& ctx);
+    void on_accept(accept_context&& ctx);
   };
 }
